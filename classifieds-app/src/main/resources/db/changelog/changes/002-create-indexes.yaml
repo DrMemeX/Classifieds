@@ -1,0 +1,181 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 010-create-index-users-updated-at
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/010-create-index-users-updated-at.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 011-create-index-users-status
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/011-create-index-users-status.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 012-create-index-categories-parent-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/012-create-index-categories-parent-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 013-create-index-categories-active
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/013-create-index-categories-active.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 014-create-index-advertisements-seller-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/014-create-index-advertisements-seller-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 015-create-index-advertisements-category-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/015-create-index-advertisements-category-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 016-create-index-advertisements-region-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/016-create-index-advertisements-region-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 017-create-index-advertisements-status
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/017-create-index-advertisements-status.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 018-create-index-advertisements-price
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/018-create-index-advertisements-price.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 019-create-index-advertisements-created-at
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/019-create-index-advertisements-created-at.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 020-create-index-advertisements-updated-at
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/020-create-index-advertisements-updated-at.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 021-create-index-advertisement-images-advertisement-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/021-create-index-advertisement-images-advertisement-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 022-create-index-comments-advertisement-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/022-create-index-comments-advertisement-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 023-create-index-comments-author-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/023-create-index-comments-author-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 024-create-index-comments-created-at
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/024-create-index-comments-created-at.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 025-create-index-conversations-advertisement-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/025-create-index-conversations-advertisement-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 026-create-index-conversations-buyer-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/026-create-index-conversations-buyer-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 027-create-index-messages-conversation-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/027-create-index-messages-conversation-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 028-create-index-messages-author-id
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/028-create-index-messages-author-id.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 029-create-index-messages-created-at
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/029-create-index-messages-created-at.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8

@@ -1,0 +1,9 @@
+databaseChangeLog:
+
+  - include:
+      file: changes/001-create-initial-schema.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/002-create-indexes.yaml
+      relativeToChangelogFile: true

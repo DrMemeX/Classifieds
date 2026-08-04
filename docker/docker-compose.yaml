@@ -1,0 +1,23 @@
+name: classifieds
+
+services:
+  postgres:
+    image: postgres:17
+
+    container_name: classifieds-postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: classifieds
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "4444:5432"
+
+    volumes:
+      - classifieds_data:/var/lib/postgresql/data
+
+volumes:
+  classifieds_data:

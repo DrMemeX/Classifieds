@@ -1,0 +1,82 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 001-create-users
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/001-create-users-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 002-create-user-profiles
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/002-create-user-profiles-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 003-create-regions
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/003-create-regions-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 004-create-categories
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/004-create-categories-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 005-create-advertisements
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/005-create-advertisements-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 006-create-advertisement-images
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/006-create-advertisement-images-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 007-create-comments
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/007-create-comments-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 008-create-conversations
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/008-create-conversations-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 009-create-messages
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/009-create-messages-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8

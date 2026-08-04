@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: classifieds
+
+  datasource:
+    url: jdbc:postgresql://localhost:4444/classifieds
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  port: 8080
