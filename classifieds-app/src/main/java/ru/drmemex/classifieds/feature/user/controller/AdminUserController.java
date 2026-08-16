@@ -30,7 +30,7 @@ public class AdminUserController {
 
     private final UserService userService;
 
-    @PostMapping
+    @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public RegisterUserResponse registerAdmin(
             @Valid
