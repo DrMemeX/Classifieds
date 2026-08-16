@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -49,11 +50,13 @@ public class UserController {
         return userService.login(request);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ResponseEntity<CurrentUserResponse> getAccount() {
         return ResponseEntity.ok(userService.getAccount());
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/me/profile")
     public ResponseEntity<Void> updateProfile(
             @Valid
@@ -65,6 +68,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/me/login")
     public ResponseEntity<Void> changeLogin(
             @Valid
@@ -75,6 +79,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/me/password")
     public ResponseEntity<Void> changePassword(
             @Valid
@@ -86,6 +91,7 @@ public class UserController {
     }
 
     //при удалении доделать удаление сопряженных объявлений и т.д.
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteAccount() {
         userService.deleteAccount();

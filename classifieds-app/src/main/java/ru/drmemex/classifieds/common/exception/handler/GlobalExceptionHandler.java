@@ -2,11 +2,11 @@ package ru.drmemex.classifieds.common.exception.handler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.drmemex.classifieds.common.exception.AccessDeniedException;
 import ru.drmemex.classifieds.common.exception.ConflictException;
 import ru.drmemex.classifieds.common.exception.NotFoundException;
 import ru.drmemex.classifieds.common.exception.UnauthorizedException;
@@ -34,16 +34,6 @@ public class GlobalExceptionHandler {
     ) {
         return buildErrorResponse(
                 HttpStatus.NOT_FOUND,
-                exception.getMessage()
-        );
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-            AccessDeniedException exception
-    ) {
-        return buildErrorResponse(
-                HttpStatus.FORBIDDEN,
                 exception.getMessage()
         );
     }
@@ -83,6 +73,16 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 message
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleSpringAccessDeniedException(
+            AccessDeniedException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.FORBIDDEN,
+                "Access Denied"
         );
     }
 
