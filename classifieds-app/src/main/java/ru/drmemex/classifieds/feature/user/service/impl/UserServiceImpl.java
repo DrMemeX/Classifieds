@@ -180,7 +180,7 @@ public class UserServiceImpl implements UserService {
 
         user.setUpdatedAt(LocalDateTime.now());
 
-        userProfileRepository.save(profile);
+        userProfileRepository.update(profile);
         userRepository.update(user);
     }
 
