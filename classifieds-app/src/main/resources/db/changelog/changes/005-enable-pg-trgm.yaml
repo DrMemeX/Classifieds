@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 032-enable-pg-trgm
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/032-enable-pg-trgm.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
