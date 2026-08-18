@@ -7,3 +7,7 @@ databaseChangeLog:
   - include:
       file: changes/002-create-indexes.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: changes/003-insert-misc-category.yaml
+      relativeToChangelogFile: true
