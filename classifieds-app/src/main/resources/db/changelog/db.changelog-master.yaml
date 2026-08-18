@@ -11,3 +11,11 @@ databaseChangeLog:
   - include:
       file: changes/003-insert-misc-category.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: changes/004-insert-regions.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/005-enable-pg-trgm.yaml
+      relativeToChangelogFile: true
