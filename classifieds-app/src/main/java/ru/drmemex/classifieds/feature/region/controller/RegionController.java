@@ -29,7 +29,7 @@ public class RegionController {
             return regionService.getAll();
         }
 
-        return regionService.findByName(name);
+        return regionService.getByName(name);
     }
 
     @GetMapping("/{id}")

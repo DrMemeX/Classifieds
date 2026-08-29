@@ -4,7 +4,7 @@ import ru.drmemex.classifieds.common.exception.ConflictException;
 
 public class CategoryAlreadyActiveException extends ConflictException {
 
-    public CategoryAlreadyActiveException() {
-        super("Category already active");
+    public CategoryAlreadyActiveException(Long id) {
+        super("Category with id " + id + " is already active");
     }
 }

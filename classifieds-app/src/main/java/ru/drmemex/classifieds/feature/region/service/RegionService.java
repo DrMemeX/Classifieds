@@ -3,7 +3,6 @@ package ru.drmemex.classifieds.feature.region.service;
 import ru.drmemex.classifieds.feature.region.dto.RegionResponse;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface RegionService {
 
@@ -11,5 +10,5 @@ public interface RegionService {
 
     RegionResponse getById(Long id);
 
-    List<RegionResponse> findByName(String name);
+    List<RegionResponse> getByName(String name);
 }

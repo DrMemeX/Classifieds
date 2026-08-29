@@ -4,7 +4,11 @@ import ru.drmemex.classifieds.common.exception.NotFoundException;
 
 public class CategoryNotFoundException extends NotFoundException {
 
-    public CategoryNotFoundException() {
-        super("Category not found");
+    public CategoryNotFoundException(Long id) {
+        super("Category with id " + id + " not found");
+    }
+
+    public CategoryNotFoundException(String name) {
+        super("Category with name '" + name + "' not found");
     }
 }

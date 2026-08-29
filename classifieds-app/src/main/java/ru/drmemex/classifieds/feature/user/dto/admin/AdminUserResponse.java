@@ -4,6 +4,7 @@ import ru.drmemex.classifieds.feature.user.model.UserRole;
 import ru.drmemex.classifieds.feature.user.model.UserStatus;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record AdminUserResponse(
 
@@ -14,9 +15,9 @@ public record AdminUserResponse(
         String firstName,
         String lastName,
         String phone,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        LocalDateTime blockedAt
+        OffsetDateTime createdAt,
+        OffsetDateTime updatedAt,
+        OffsetDateTime blockedAt
 
 ) {
 }
