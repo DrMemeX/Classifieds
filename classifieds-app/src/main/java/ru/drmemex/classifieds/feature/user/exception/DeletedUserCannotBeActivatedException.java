@@ -4,7 +4,7 @@ import ru.drmemex.classifieds.common.exception.ConflictException;
 
 public class DeletedUserCannotBeActivatedException extends ConflictException {
 
-    public DeletedUserCannotBeActivatedException() {
-        super("Deleted user cannot be activated");
+    public DeletedUserCannotBeActivatedException(Long id) {
+        super("Deleted user with id " + id + " cannot be activated");
     }
 }

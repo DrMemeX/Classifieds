@@ -4,7 +4,7 @@ import ru.drmemex.classifieds.common.exception.ConflictException;
 
 public class UserAlreadyBlockedException extends ConflictException {
 
-    public UserAlreadyBlockedException() {
-        super("User is already blocked");
+    public UserAlreadyBlockedException(Long id) {
+        super("User with id " + id + " is already blocked");
     }
 }

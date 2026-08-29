@@ -67,7 +67,11 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     @Override
     public Optional<Category> findByName(String name) {
         return entityManager.createQuery(
-                        "SELECT c FROM Category c WHERE c.name = :name",
+                        """
+                                SELECT c
+                                FROM Category c
+                                WHERE LOWER(c.name) = :name
+                                """,
                         Category.class
                 )
                 .setParameter("name", name)
@@ -79,7 +83,12 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     @Override
     public Optional<Category> findActiveByName(String name) {
         return entityManager.createQuery(
-                        "SELECT c FROM Category c WHERE c.name = :name AND c.active = TRUE",
+                        """
+                                SELECT c
+                                FROM Category c
+                                WHERE LOWER(c.name) = :name
+                                AND c.active = TRUE
+                                """,
                         Category.class
                 )
                 .setParameter("name", name)
@@ -152,7 +161,11 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     @Override
     public boolean existsByName(String name) {
         Long count = entityManager.createQuery(
-                        "SELECT COUNT(c) FROM Category c WHERE c.name = :name",
+                        """
+                                SELECT COUNT(c)
+                                FROM Category c
+                                WHERE LOWER(c.name) = :name
+                                """,
                         Long.class
                 )
                 .setParameter("name", name)

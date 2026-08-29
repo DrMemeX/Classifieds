@@ -4,7 +4,7 @@ import ru.drmemex.classifieds.common.exception.ConflictException;
 
 public class ParentCategoryIsInactiveException extends ConflictException {
 
-    public ParentCategoryIsInactiveException() {
-        super("Category cannot be activated while its parent is inactive");
+    public ParentCategoryIsInactiveException(Long parentId) {
+        super("Parent category with id " + parentId + " is inactive");
     }
 }
