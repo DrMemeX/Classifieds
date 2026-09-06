@@ -19,3 +19,7 @@ databaseChangeLog:
   - include:
       file: changes/005-enable-pg-trgm.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: changes/006-make-advertisement-image-order-deferrable.yaml
+      relativeToChangelogFile: true
