@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 033-make-advertisement-image-order-deferrable
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/033-make-advertisement-image-order-deferrable.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
