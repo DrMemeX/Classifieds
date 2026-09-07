@@ -1,8 +1,6 @@
 package ru.drmemex.classifieds.feature.advertisement.image.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
@@ -21,9 +19,7 @@ import ru.drmemex.classifieds.feature.advertisement.image.service.AdvertisementI
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
 import ru.drmemex.classifieds.feature.advertisement.repository.AdvertisementRepository;
 import ru.drmemex.classifieds.feature.user.entity.User;
-import ru.drmemex.classifieds.feature.user.model.UserStatus;
-import ru.drmemex.classifieds.feature.user.repository.UserRepository;
-import ru.drmemex.classifieds.security.exception.InvalidCredentialsException;
+import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 
 import java.util.List;
 
@@ -35,8 +31,8 @@ public class AdvertisementImageServiceImpl implements AdvertisementImageService 
 
     private final AdvertisementImageRepository advertisementImageRepository;
     private final AdvertisementRepository advertisementRepository;
-    private final UserRepository userRepository;
     private final AdvertisementImageMapper advertisementImageMapper;
+    private final CurrentUserProvider currentUserProvider;
 
     @Override
     @Transactional
@@ -116,7 +112,7 @@ public class AdvertisementImageServiceImpl implements AdvertisementImageService 
     ) {
         Advertisement advertisement = getAdvertisement(advertisementId);
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         boolean isOwner =
                 advertisement.getSeller().getId().equals(currentUser.getId());
@@ -207,23 +203,12 @@ public class AdvertisementImageServiceImpl implements AdvertisementImageService 
     }
 
     private void checkOwner(Advertisement advertisement) {
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         if (!advertisement.getSeller().getId().equals(currentUser.getId())) {
             throw new AdvertisementAccessDeniedException(
                     advertisement.getId()
             );
         }
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        return userRepository.findByLoginAndStatus(
-                authentication.getName(),
-                UserStatus.ACTIVE
-        ).orElseThrow(InvalidCredentialsException::new);
     }
 }
