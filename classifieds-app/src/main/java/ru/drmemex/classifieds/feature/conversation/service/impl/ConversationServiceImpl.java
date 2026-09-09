@@ -80,12 +80,39 @@ public class ConversationServiceImpl implements ConversationService {
     @Transactional(readOnly = true)
     public ConversationResponse getById(Long conversationId) {
 
+        User currentUser = currentUserProvider.getCurrentUser();
+
+        Conversation conversation = getAccessibleConversation(
+                conversationId,
+                currentUser
+        );
+
+        return conversationMapper.toResponse(conversation);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ConversationResponse> getMyConversations() {
+
+        User currentUser = currentUserProvider.getCurrentUser();
+
+        return conversationRepository
+                .findByParticipantId(currentUser.getId())
+                .stream()
+                .map(conversationMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Conversation getAccessibleConversation(
+            Long conversationId,
+            User currentUser
+    ) {
         Conversation conversation = conversationRepository
                 .findById(conversationId)
                 .orElseThrow(() ->
                         new ConversationNotFoundException(conversationId));
-
-        User currentUser = currentUserProvider.getCurrentUser();
 
         boolean isBuyer = conversation.getBuyer()
                 .getId()
@@ -102,19 +129,6 @@ public class ConversationServiceImpl implements ConversationService {
             );
         }
 
-        return conversationMapper.toResponse(conversation);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ConversationResponse> getMyConversations() {
-
-        User currentUser = currentUserProvider.getCurrentUser();
-
-        return conversationRepository
-                .findByParticipantId(currentUser.getId())
-                .stream()
-                .map(conversationMapper::toResponse)
-                .toList();
+        return conversation;
     }
 }
