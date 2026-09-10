@@ -1,7 +1,10 @@
 package ru.drmemex.classifieds.feature.comment.exception;
 
-public class CommentAccessDeniedException extends RuntimeException {
-  public CommentAccessDeniedException(String message) {
-    super(message);
-  }
+import ru.drmemex.classifieds.common.exception.ForbiddenException;
+
+public class CommentAccessDeniedException extends ForbiddenException {
+
+    public CommentAccessDeniedException(Long commentId) {
+        super("Access denied to comment: " + commentId);
+    }
 }
