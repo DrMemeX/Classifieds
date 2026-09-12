@@ -1,7 +1,10 @@
 package ru.drmemex.classifieds.feature.advertisement.exception;
 
-public class AdvertisementRateLimitExceededException extends RuntimeException {
-  public AdvertisementRateLimitExceededException(String message) {
-    super(message);
-  }
+import ru.drmemex.classifieds.common.exception.ConflictException;
+
+public class AdvertisementRateLimitExceededException extends ConflictException {
+
+    public AdvertisementRateLimitExceededException() {
+        super("Advertisement rate limit exceeded");
+    }
 }

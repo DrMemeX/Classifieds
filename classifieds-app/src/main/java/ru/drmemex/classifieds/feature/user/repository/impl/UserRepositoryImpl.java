@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
 import ru.drmemex.classifieds.feature.user.entity.User;
 import ru.drmemex.classifieds.feature.user.model.UserRole;
 import ru.drmemex.classifieds.feature.user.model.UserStatus;
@@ -11,6 +12,8 @@ import ru.drmemex.classifieds.feature.user.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
+
+import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.applyPagination;
 
 @Repository
 public class UserRepositoryImpl implements UserRepository {
@@ -37,63 +40,34 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Optional<User> findByLogin(String login) {
+    public Optional<User> findByLoginAndStatus(
+            String login,
+            UserStatus status
+    ) {
         return entityManager.createQuery(
-                        "SELECT u FROM User u WHERE u.login = :login",
+                        """
+                                SELECT u
+                                FROM User u
+                                WHERE u.login = :login
+                                AND u.status = :status
+                                """,
                         User.class
                 )
-                .setParameter("login", login)
-                .getResultList()
-                .stream()
-                .findFirst();
-    }
-
-    @Override
-    public Optional<User> findByLoginAndStatus(String login, UserStatus status) {
-        return entityManager.createQuery(
-                "SELECT u FROM User u WHERE u.login = :login AND u.status = :status",
-                User.class
-        )
                 .setParameter("login", login)
                 .setParameter("status", status)
                 .getResultList()
                 .stream()
                 .findFirst();
-    }
-
-    @Override
-    public List<User> findAll() {
-        return entityManager.createQuery(
-                        "SELECT u FROM User u ORDER BY u.createdAt DESC",
-                        User.class
-                )
-                .getResultList();
-    }
-
-    @Override
-    public List<User> findByRole(UserRole role) {
-        return entityManager.createQuery(
-                        "SELECT u FROM User u WHERE u.role = :role ORDER BY u.createdAt DESC",
-                        User.class
-                )
-                .setParameter("role", role)
-                .getResultList();
-    }
-
-    @Override
-    public List<User> findByStatus(UserStatus status) {
-        return entityManager.createQuery(
-                        "SELECT u FROM User u WHERE u.status = :status ORDER BY u.createdAt DESC",
-                        User.class
-                )
-                .setParameter("status", status)
-                .getResultList();
     }
 
     @Override
     public boolean existsByLogin(String login) {
         Long count = entityManager.createQuery(
-                        "SELECT COUNT(u) FROM User u WHERE u.login = :login",
+                        """
+                                SELECT COUNT(u)
+                                FROM User u
+                                WHERE u.login = :login
+                                """,
                         Long.class
                 )
                 .setParameter("login", login)
@@ -103,7 +77,11 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public List<User> findByFilters(UserStatus status, UserRole role) {
+    public List<User> findByFilters(
+            UserStatus status,
+            UserRole role,
+            PageRequest pageRequest
+    ) {
 
         StringBuilder jpql = new StringBuilder(
                 "SELECT u FROM User u WHERE 1 = 1"
@@ -117,7 +95,9 @@ public class UserRepositoryImpl implements UserRepository {
             jpql.append(" AND u.role = :role");
         }
 
-        jpql.append(" ORDER BY u.createdAt DESC");
+        jpql.append(
+                " ORDER BY u.createdAt DESC, u.id DESC"
+        );
 
         TypedQuery<User> query = entityManager.createQuery(
                 jpql.toString(),
@@ -132,6 +112,45 @@ public class UserRepositoryImpl implements UserRepository {
             query.setParameter("role", role);
         }
 
+        applyPagination(
+                query,
+                pageRequest
+        );
+
         return query.getResultList();
+    }
+
+    @Override
+    public long countByFilters(
+            UserStatus status,
+            UserRole role
+    ) {
+
+        StringBuilder jpql = new StringBuilder(
+                "SELECT COUNT(u) FROM User u WHERE 1 = 1"
+        );
+
+        if (status != null) {
+            jpql.append(" AND u.status = :status");
+        }
+
+        if (role != null) {
+            jpql.append(" AND u.role = :role");
+        }
+
+        TypedQuery<Long> query = entityManager.createQuery(
+                jpql.toString(),
+                Long.class
+        );
+
+        if (status != null) {
+            query.setParameter("status", status);
+        }
+
+        if (role != null) {
+            query.setParameter("role", role);
+        }
+
+        return query.getSingleResult();
     }
 }

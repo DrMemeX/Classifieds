@@ -1,5 +1,7 @@
 package ru.drmemex.classifieds.feature.user.service;
 
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.user.dto.account.UpdateUserProfileRequest;
 import ru.drmemex.classifieds.feature.user.dto.account.CurrentUserResponse;
 import ru.drmemex.classifieds.feature.user.dto.admin.AdminUserResponse;
@@ -11,8 +13,6 @@ import ru.drmemex.classifieds.feature.user.dto.auth.register.RegisterUserRequest
 import ru.drmemex.classifieds.feature.user.dto.auth.register.RegisterUserResponse;
 import ru.drmemex.classifieds.feature.user.model.UserRole;
 import ru.drmemex.classifieds.feature.user.model.UserStatus;
-
-import java.util.List;
 
 public interface UserService {
 
@@ -32,9 +32,10 @@ public interface UserService {
 
     void deleteAccount();
 
-    List<AdminUserResponse> getUsers(
+    PageResponse<AdminUserResponse> getUsers(
             UserStatus status,
-            UserRole role
+            UserRole role,
+            PageRequest pageRequest
     );
 
     AdminUserResponse getUser(Long id);

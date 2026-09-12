@@ -4,11 +4,14 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
 import ru.drmemex.classifieds.feature.conversation.entity.Conversation;
 import ru.drmemex.classifieds.feature.conversation.repository.ConversationRepository;
 
 import java.util.List;
 import java.util.Optional;
+
+import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.applyPagination;
 
 @Repository
 public class ConversationRepositoryImpl implements ConversationRepository {
@@ -50,19 +53,43 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     }
 
     @Override
-    public List<Conversation> findByParticipantId(Long userId) {
+    public List<Conversation> findByParticipantId(
+            Long userId,
+            PageRequest pageRequest
+    ) {
         TypedQuery<Conversation> query = entityManager.createQuery(
                 """
                         SELECT c
                         FROM Conversation c
                         WHERE c.buyer.id = :userId
                         OR c.advertisement.seller.id = :userId
-                        ORDER BY c.createdAt DESC
-                        """, Conversation.class
+                        ORDER BY c.createdAt DESC, c.id DESC
+                        """,
+                Conversation.class
         );
 
         query.setParameter("userId", userId);
 
+        applyPagination(
+                query,
+                pageRequest
+        );
+
         return query.getResultList();
+    }
+
+    @Override
+    public long countByParticipantId(Long userId) {
+        return entityManager.createQuery(
+                        """
+                                SELECT COUNT(c)
+                                FROM Conversation c
+                                WHERE c.buyer.id = :userId
+                                OR c.advertisement.seller.id = :userId
+                                """,
+                        Long.class
+                )
+                .setParameter("userId", userId)
+                .getSingleResult();
     }
 }

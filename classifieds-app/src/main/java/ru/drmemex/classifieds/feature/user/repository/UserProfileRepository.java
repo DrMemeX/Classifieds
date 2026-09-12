@@ -12,7 +12,5 @@ public interface UserProfileRepository {
 
     Optional<UserProfile> findById(Long id);
 
-    Optional<UserProfile> findByPhone(String phone);
-
     boolean existsByPhone(String phone);
 }
