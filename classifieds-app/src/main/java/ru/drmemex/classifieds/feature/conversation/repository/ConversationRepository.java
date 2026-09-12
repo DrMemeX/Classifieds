@@ -1,5 +1,6 @@
 package ru.drmemex.classifieds.feature.conversation.repository;
 
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
 import ru.drmemex.classifieds.feature.conversation.entity.Conversation;
 
 import java.util.List;
@@ -16,5 +17,12 @@ public interface ConversationRepository {
             Long buyerId
     );
 
-    List<Conversation> findByParticipantId(Long userId);
+    List<Conversation> findByParticipantId(
+            Long userId,
+            PageRequest pageRequest
+    );
+
+    long countByParticipantId(
+            Long userId
+    );
 }

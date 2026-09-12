@@ -1,10 +1,10 @@
 package ru.drmemex.classifieds.feature.conversation.service;
 
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.conversation.dto.ConversationResponse;
 import ru.drmemex.classifieds.feature.conversation.entity.Conversation;
 import ru.drmemex.classifieds.feature.user.entity.User;
-
-import java.util.List;
 
 public interface ConversationService {
 
@@ -12,7 +12,9 @@ public interface ConversationService {
 
     ConversationResponse getById(Long conversationId);
 
-    List<ConversationResponse> getMyConversations();
+    PageResponse<ConversationResponse> getMyConversations(
+            PageRequest pageRequest
+    );
 
     Conversation getAccessibleConversation(
             Long conversationId,

@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
 import ru.drmemex.classifieds.feature.advertisement.repository.AdvertisementRepository;
@@ -39,6 +41,8 @@ import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.buildPageResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -215,18 +219,35 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AdminUserResponse> getUsers(
+    public PageResponse<AdminUserResponse> getUsers(
             UserStatus status,
-            UserRole role
+            UserRole role,
+            PageRequest pageRequest
     ) {
-        List<User> users = userRepository.findByFilters(status, role);
 
-        return users.stream()
+        List<AdminUserResponse> content = userRepository
+                .findByFilters(
+                        status,
+                        role,
+                        pageRequest
+                )
+                .stream()
                 .map(user -> userMapper.toAdminUserResponse(
                         user,
                         user.getProfile()
                 ))
                 .toList();
+
+        long totalElements = userRepository.countByFilters(
+                status,
+                role
+        );
+
+        return buildPageResponse(
+                content,
+                pageRequest,
+                totalElements
+        );
     }
 
     @Override
