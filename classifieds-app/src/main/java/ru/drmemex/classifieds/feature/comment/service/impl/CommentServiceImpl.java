@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.feature.comment.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
@@ -27,6 +28,7 @@ import java.util.List;
 
 import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.buildPageResponse;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
@@ -70,6 +72,12 @@ public class CommentServiceImpl implements CommentService {
                 );
 
         if (recentComments >= COMMENT_RATE_LIMIT) {
+
+            log.warn(
+                    "Comment rate limit exceeded: userId={}",
+                    currentUser.getId()
+            );
+
             throw new CommentRateLimitExceededException();
         }
 
@@ -80,9 +88,17 @@ public class CommentServiceImpl implements CommentService {
                 .createdAt(OffsetDateTime.now())
                 .build();
 
-        return commentMapper.toResponse(
-                commentRepository.save(comment)
+        Comment savedComment =
+                commentRepository.save(comment);
+
+        log.info(
+                "Comment created: commentId={}, advertisementId={}, authorId={}",
+                savedComment.getId(),
+                advertisementId,
+                currentUser.getId()
         );
+
+        return commentMapper.toResponse(savedComment);
     }
 
     @Override
@@ -135,5 +151,11 @@ public class CommentServiceImpl implements CommentService {
         }
 
         commentRepository.delete(comment);
+
+        log.info(
+                "Comment deleted: commentId={}, deletedByUserId={}",
+                commentId,
+                currentUser.getId()
+        );
     }
 }

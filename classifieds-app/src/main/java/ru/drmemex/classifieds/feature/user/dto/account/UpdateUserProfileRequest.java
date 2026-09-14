@@ -26,12 +26,8 @@ public record UpdateUserProfileRequest(
         String lastName,
 
         @Pattern(
-                regexp = ".*\\S.*",
-                message = "Phone must not be blank"
-        )
-        @Size(
-                max = 20,
-                message = "Phone cannot exceed 20 characters"
+                regexp = "^\\+?[0-9]{10,15}$",
+                message = "Phone number has invalid format"
         )
         String phone
 ) {

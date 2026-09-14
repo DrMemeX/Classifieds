@@ -4,6 +4,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.drmemex.classifieds.feature.user.entity.User;
 import ru.drmemex.classifieds.security.jwt.JwtProperties;
@@ -13,6 +14,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
@@ -57,6 +59,11 @@ public class JwtServiceImpl implements JwtService {
             extractLogin(token);
             return true;
         } catch (JwtException e) {
+            log.warn(
+                    "Invalid JWT token: {}",
+                    e.getClass().getSimpleName()
+            );
+
             return false;
         }
     }

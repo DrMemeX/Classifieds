@@ -1,0 +1,2 @@
+ALTER TABLE user_profiles
+    ALTER COLUMN phone DROP NOT NULL;

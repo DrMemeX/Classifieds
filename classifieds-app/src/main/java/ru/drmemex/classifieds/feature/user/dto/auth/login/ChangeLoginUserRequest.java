@@ -5,8 +5,12 @@ import jakarta.validation.constraints.Size;
 
 public record ChangeLoginUserRequest(
 
-        @NotBlank
-        @Size(min = 4, max = 50)
+        @NotBlank(message = "Login cannot be blank")
+        @Size(
+                min = 4,
+                max = 50,
+                message = "Login must contain from 4 to 50 characters"
+        )
         String newLogin
 
 ) {
