@@ -28,6 +28,16 @@
 
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok.version>1.18.38</lombok.version>
+
+        <checkstyle.config.path>
+            ${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml
+        </checkstyle.config.path>
+
+        <checkstyle.suppressions.path>
+            ${maven.multiModuleProjectDirectory}/config/checkstyle/suppressions.xml
+        </checkstyle.suppressions.path>
+
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -81,5 +91,41 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+
+                <configuration>
+                    <configLocation>${checkstyle.config.path}</configLocation>
+
+                    <propertyExpansion>
+                        checkstyle.suppressions.file=${checkstyle.suppressions.path}
+                    </propertyExpansion>
+
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <linkXRef>false</linkXRef>
+                </configuration>
+
+                <executions>
+
+                    <execution>
+                        <id>checkstyle-validate</id>
+                        <phase>validate</phase>
+
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+
+                </executions>
+            </plugin>
+
+        </plugins>
+
     </build>
 </project>

@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.feature.conversation.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
@@ -27,6 +28,7 @@ import java.util.List;
 
 import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.buildPageResponse;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConversationServiceImpl implements ConversationService {
@@ -75,9 +77,17 @@ public class ConversationServiceImpl implements ConversationService {
                 .createdAt(OffsetDateTime.now())
                 .build();
 
-        conversationRepository.save(conversation);
+        Conversation savedConversation =
+                conversationRepository.save(conversation);
 
-        return conversationMapper.toResponse(conversation);
+        log.info(
+                "Conversation created: conversationId={}, advertisementId={}, buyerId={}",
+                savedConversation.getId(),
+                advertisementId,
+                buyer.getId()
+        );
+
+        return conversationMapper.toResponse(savedConversation);
     }
 
     @Override

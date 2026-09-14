@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.feature.category.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.common.util.string.StringNormalizer;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
@@ -65,7 +67,14 @@ public class CategoryServiceImpl implements CategoryService {
 
         category.setActive(true);
 
-        return categoryMapper.toResponse(categoryRepository.save(category));
+        Category savedCategory = categoryRepository.save(category);
+
+        log.info(
+                "Category created: categoryId={}",
+                savedCategory.getId()
+        );
+
+        return categoryMapper.toResponse(savedCategory);
     }
 
     @Override
@@ -115,9 +124,15 @@ public class CategoryServiceImpl implements CategoryService {
         existingCategory.setName(name);
         existingCategory.setParent(parent);
 
-        return categoryMapper.toResponse(
-                categoryRepository.update(existingCategory)
+        Category updatedCategory =
+                categoryRepository.update(existingCategory);
+
+        log.info(
+                "Category updated: categoryId={}",
+                id
         );
+
+        return categoryMapper.toResponse(updatedCategory);
     }
 
     @Override
@@ -244,6 +259,11 @@ public class CategoryServiceImpl implements CategoryService {
         category.setActive(true);
 
         categoryRepository.update(category);
+
+        log.info(
+                "Category activated: categoryId={}",
+                id
+        );
     }
 
     @Override
@@ -270,6 +290,11 @@ public class CategoryServiceImpl implements CategoryService {
         category.setActive(false);
 
         categoryRepository.update(category);
+
+        log.info(
+                "Category deactivated: categoryId={}",
+                id
+        );
     }
 
     private CategoryResponse toResponse(

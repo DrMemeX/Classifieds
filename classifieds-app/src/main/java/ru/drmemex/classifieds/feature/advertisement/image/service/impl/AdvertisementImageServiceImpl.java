@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.feature.advertisement.image.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
@@ -23,6 +24,7 @@ import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdvertisementImageServiceImpl implements AdvertisementImageService {
@@ -50,6 +52,12 @@ public class AdvertisementImageServiceImpl implements AdvertisementImageService 
                 );
 
         if (imageCount >= MAX_IMAGES) {
+
+            log.warn(
+                    "Advertisement image limit exceeded: advertisementId={}",
+                    advertisementId
+            );
+
             throw new AdvertisementImageLimitExceededException();
         }
 
@@ -59,9 +67,16 @@ public class AdvertisementImageServiceImpl implements AdvertisementImageService 
         image.setAdvertisement(advertisement);
         image.setDisplayOrder((short) (imageCount + 1));
 
-        return advertisementImageMapper.toResponse(
-                advertisementImageRepository.save(image)
+        AdvertisementImage savedImage =
+                advertisementImageRepository.save(image);
+
+        log.info(
+                "Advertisement image created: imageId={}, advertisementId={}",
+                savedImage.getId(),
+                advertisementId
         );
+
+        return advertisementImageMapper.toResponse(savedImage);
     }
 
     @Override
@@ -101,6 +116,13 @@ public class AdvertisementImageServiceImpl implements AdvertisementImageService 
         images.add(displayOrder - 1, image);
 
         reorderImages(images);
+
+        log.info(
+                "Advertisement image reordered: imageId={}, advertisementId={}, displayOrder={}",
+                imageId,
+                advertisementId,
+                displayOrder
+        );
 
         return advertisementImageMapper.toResponse(image);
     }
@@ -169,6 +191,12 @@ public class AdvertisementImageServiceImpl implements AdvertisementImageService 
                 );
 
         reorderImages(images);
+
+        log.info(
+                "Advertisement image deleted: imageId={}, advertisementId={}",
+                imageId,
+                advertisementId
+        );
     }
 
     private void reorderImages(List<AdvertisementImage> images) {

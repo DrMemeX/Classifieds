@@ -5,6 +5,9 @@ target/
 !**/src/test/**/target/
 .kotlin
 
+### Logs ###
+logs/
+
 ### IntelliJ IDEA ###
 .idea/
 *.iws

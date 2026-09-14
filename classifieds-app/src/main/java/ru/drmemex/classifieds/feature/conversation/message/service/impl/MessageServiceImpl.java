@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.feature.conversation.message.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.buildPageResponse;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
@@ -70,6 +72,12 @@ public class MessageServiceImpl implements MessageService {
                 );
 
         if (recentMessages >= MESSAGE_RATE_LIMIT) {
+
+            log.warn(
+                    "Message rate limit exceeded: userId={}",
+                    currentUser.getId()
+            );
+
             throw new MessageRateLimitExceededException();
         }
 
@@ -80,9 +88,17 @@ public class MessageServiceImpl implements MessageService {
                 .createdAt(OffsetDateTime.now())
                 .build();
 
-        messageRepository.save(message);
+        Message savedMessage =
+                messageRepository.save(message);
 
-        return messageMapper.toResponse(message);
+        log.info(
+                "Message sent: messageId={}, conversationId={}, authorId={}",
+                savedMessage.getId(),
+                conversationId,
+                currentUser.getId()
+        );
+
+        return messageMapper.toResponse(savedMessage);
     }
 
     @Override
