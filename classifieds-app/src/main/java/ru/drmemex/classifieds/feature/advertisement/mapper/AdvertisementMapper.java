@@ -5,6 +5,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementResponse;
+import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementSellerResponse;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
 
 @Mapper(
@@ -27,4 +28,9 @@ public interface AdvertisementMapper {
     @Mapping(target = "regionId", source = "region.id")
     @Mapping(target = "status", source = "advertisementStatus")
     AdvertisementResponse toResponse(Advertisement advertisement);
+
+    @Mapping(target = "userId", source = "seller.id")
+    @Mapping(target = "firstName", source = "seller.profile.firstName")
+    @Mapping(target = "lastName", source = "seller.profile.lastName")
+    AdvertisementSellerResponse toSellerResponse(Advertisement advertisement);
 }
