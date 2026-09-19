@@ -23,7 +23,7 @@ import ru.drmemex.classifieds.feature.advertisement.service.AdvertisementService
 
 @Validated
 @RestController
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 @RequestMapping("/api/v1/admin/advertisements")
 @RequiredArgsConstructor
 public class AdminAdvertisementController {

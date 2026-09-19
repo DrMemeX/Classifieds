@@ -27,7 +27,7 @@ import ru.drmemex.classifieds.feature.user.service.UserService;
 
 @Validated
 @RestController
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
 public class AdminUserController {
@@ -35,6 +35,7 @@ public class AdminUserController {
     private final UserService userService;
 
     @PostMapping("/register")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public RegisterUserResponse registerAdmin(
             @Valid
