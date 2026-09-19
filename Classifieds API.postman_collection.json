@@ -92,7 +92,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"login\": \"andrei-user\",\r\n  \"password\": \"Andrei1234\"\r\n}",
+              "raw": "{\r\n  \"login\": \"andrei-super-admin\",\r\n  \"password\": \"Andrei1234\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -201,7 +201,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"newLogin\": \"IOAN\"\r\n}",
+              "raw": "{\r\n    \"newLogin\": \"andrei-admin\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -319,7 +319,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n  \"login\": \"admin\",\r\n  \"password\": \"admin123\",\r\n  \"firstName\": \"Admin\",\r\n  \"lastName\": \"Adminov\",\r\n  \"phone\": \"+79990000000\"\r\n}",
+                  "raw": "{\r\n  \"login\": \"admin2\",\r\n  \"password\": \"admin1234\",\r\n  \"firstName\": \"Admin\",\r\n  \"lastName\": \"Adminov\",\r\n  \"phone\": \"+79990000009\"\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -327,7 +327,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{base_url}}/api/v1/admin/users",
+                  "raw": "{{base_url}}/api/v1/admin/users/register",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -335,7 +335,8 @@
                     "api",
                     "v1",
                     "admin",
-                    "users"
+                    "users",
+                    "register"
                   ]
                 }
               },
@@ -563,7 +564,7 @@
                 "method": "PATCH",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/admin/users/6/block",
+                  "raw": "{{base_url}}/api/v1/admin/users/11/block",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -572,7 +573,7 @@
                     "v1",
                     "admin",
                     "users",
-                    "6",
+                    "11",
                     "block"
                   ]
                 }
@@ -582,10 +583,20 @@
             {
               "name": "UnblockUser",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "PATCH",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/admin/users/1/unblock",
+                  "raw": "{{base_url}}/api/v1/admin/users/6/unblock",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -594,7 +605,7 @@
                     "v1",
                     "admin",
                     "users",
-                    "1",
+                    "6",
                     "unblock"
                   ]
                 }
@@ -623,7 +634,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n  \"name\": \"Стиральные Машины\",\r\n  \"parentId\": 1,\r\n  \"active\": true\r\n}",
+                  "raw": "{\r\n    \"name\": \"Посудомоечные машины\",\r\n    \"parentName\": \"Электроника\"\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1020,16 +1031,73 @@
             {
               "name": "GetAdvertisementById",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "GET",
-                "header": []
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/advertisements/3",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "advertisements",
+                    "3"
+                  ]
+                }
               },
               "response": []
             },
             {
               "name": "GetSellerAdvertisements",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "GET",
-                "header": []
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/advertisements/seller/7?page=0&size=10",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "advertisements",
+                    "seller",
+                    "7"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    }
+                  ]
+                }
               },
               "response": []
             },
@@ -1081,10 +1149,20 @@
             {
               "name": "BlockAdvertisement",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "PATCH",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/admin/advertisements/1/block",
+                  "raw": "{{base_url}}/api/v1/admin/advertisements/5/block",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -1093,7 +1171,7 @@
                     "v1",
                     "admin",
                     "advertisements",
-                    "1",
+                    "5",
                     "block"
                   ]
                 }
@@ -1116,7 +1194,7 @@
                 "method": "PATCH",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/admin/advertisements/1/unblock",
+                  "raw": "{{base_url}}/api/v1/admin/advertisements/5/unblock",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -1125,7 +1203,7 @@
                     "v1",
                     "admin",
                     "advertisements",
-                    "1",
+                    "5",
                     "unblock"
                   ]
                 }
@@ -1746,7 +1824,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/advertisement/1",
+                  "raw": "{{base_url}}/api/v1/advertisement/3",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -1754,7 +1832,7 @@
                     "api",
                     "v1",
                     "advertisement",
-                    "1"
+                    "3"
                   ]
                 }
               },
@@ -1807,7 +1885,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/advertisement/seller/9",
+                  "raw": "{{base_url}}/api/v1/advertisement/seller/9?page=0&size=1",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -1817,6 +1895,16 @@
                     "advertisement",
                     "seller",
                     "9"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "1"
+                    }
                   ]
                 }
               },
@@ -1931,8 +2019,30 @@
             {
               "name": "DeleteAvdertisement",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "DELETE",
-                "header": []
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/advertisement/2",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "advertisement",
+                    "2"
+                  ]
+                }
               },
               "response": []
             }
@@ -1957,7 +2067,7 @@
                 "method": "POST",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/conversations/advertisements/3",
+                  "raw": "{{base_url}}/api/v1/conversations/advertisements/5",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -1966,7 +2076,7 @@
                     "v1",
                     "conversations",
                     "advertisements",
-                    "3"
+                    "5"
                   ]
                 }
               },
@@ -2063,7 +2173,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n    \"text\": \"Привет! Объявление еще актуально?\"\r\n}",
+                  "raw": "{\r\n    \"text\": \"Привет\"\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2102,7 +2212,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/conversations/1/messages",
+                  "raw": "{{base_url}}/api/v1/conversations/1/messages?page=2&size=20",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -2112,6 +2222,16 @@
                     "conversations",
                     "1",
                     "messages"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "2"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
                   ]
                 }
               },
@@ -2133,7 +2253,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/conversations/1/messages/search?text=а",
+                  "raw": "{{base_url}}/api/v1/conversations/1/messages/search?text=привет&page=0&size=2",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -2148,7 +2268,15 @@
                   "query": [
                     {
                       "key": "text",
-                      "value": "а"
+                      "value": "привет"
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "2"
                     }
                   ]
                 }
@@ -2175,6 +2303,15 @@
                 },
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"text\": \" ААА\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{base_url}}/api/v1/comments/advertisements/3",
                   "host": [
@@ -2248,7 +2385,7 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/comments/1",
+                  "raw": "{{base_url}}/api/v1/comments/2",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -2256,7 +2393,7 @@
                     "api",
                     "v1",
                     "comments",
-                    "1"
+                    "2"
                   ]
                 }
               },

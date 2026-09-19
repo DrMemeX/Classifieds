@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 035-add-super-admin-role
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/035-add-super-admin-role.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 036-create-super-admin
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/036-create-super-admin.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8

@@ -22,7 +22,7 @@ import ru.drmemex.classifieds.feature.category.service.CategoryService;
 import java.util.List;
 
 @RestController
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 @RequestMapping("/api/admin/categories")
 @RequiredArgsConstructor
 public class AdminCategoryController {
@@ -80,6 +80,7 @@ public class AdminCategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public CategoryResponse create(
             @Valid
@@ -90,6 +91,7 @@ public class AdminCategoryController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public CategoryResponse update(
             @PathVariable
             Long id,
@@ -101,6 +103,7 @@ public class AdminCategoryController {
     }
 
     @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void activate(
             @PathVariable
@@ -110,6 +113,7 @@ public class AdminCategoryController {
     }
 
     @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deactivate(
             @PathVariable

@@ -142,6 +142,7 @@ public class CommentServiceImpl implements CommentService {
                 );
 
         if (currentUser.getRole() != UserRole.ADMIN
+                && currentUser.getRole() != UserRole.SUPER_ADMIN
                 && !comment.getAuthor()
                 .getId()
                 .equals(currentUser.getId())) {

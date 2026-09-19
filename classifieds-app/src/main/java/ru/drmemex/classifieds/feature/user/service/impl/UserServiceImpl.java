@@ -27,8 +27,11 @@ import ru.drmemex.classifieds.feature.user.exception.DeletedUserCannotBeBlockedE
 import ru.drmemex.classifieds.feature.user.exception.EmptyProfileUpdateException;
 import ru.drmemex.classifieds.feature.user.exception.LoginAlreadyExistsException;
 import ru.drmemex.classifieds.feature.user.exception.PhoneAlreadyExistsException;
+import ru.drmemex.classifieds.feature.user.exception.SuperAdminCannotBeDeletedException;
 import ru.drmemex.classifieds.feature.user.exception.UserAlreadyActiveException;
 import ru.drmemex.classifieds.feature.user.exception.UserAlreadyBlockedException;
+import ru.drmemex.classifieds.feature.user.exception.UserCannotBeBlockedException;
+import ru.drmemex.classifieds.feature.user.exception.UserCannotBeUnblockedException;
 import ru.drmemex.classifieds.feature.user.exception.UserNotFoundException;
 import ru.drmemex.classifieds.feature.user.mapper.UserMapper;
 import ru.drmemex.classifieds.feature.user.model.UserRole;
@@ -232,6 +235,11 @@ public class UserServiceImpl implements UserService {
     public void deleteAccount() {
 
         User user = currentUserProvider.getCurrentUser();
+
+        if (user.getRole() == UserRole.SUPER_ADMIN) {
+            throw new SuperAdminCannotBeDeletedException();
+        }
+
         UserProfile profile = user.getProfile();
 
         user.setStatus(UserStatus.DELETED);
@@ -315,6 +323,10 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
+        if (cannotManageUser(currentUser, user)) {
+            throw new UserCannotBeBlockedException(id);
+        }
+
         if (user.getStatus() == UserStatus.DELETED) {
             throw new DeletedUserCannotBeBlockedException(id);
         }
@@ -340,8 +352,14 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void unblockUser(Long id) {
 
+        User currentUser = currentUserProvider.getCurrentUser();
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
+
+        if (cannotManageUser(currentUser, user)) {
+            throw new UserCannotBeUnblockedException(id);
+        }
 
         if (user.getStatus() == UserStatus.ACTIVE) {
             throw new UserAlreadyActiveException(id);
@@ -388,6 +406,15 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return user;
+    }
+
+    private boolean cannotManageUser(
+            User currentUser,
+            User user
+    ) {
+        return user.getRole() == UserRole.SUPER_ADMIN
+                || currentUser.getRole() == UserRole.ADMIN
+                && user.getRole() == UserRole.ADMIN;
     }
 
     private void deactivateActiveAdvertisements(Long sellerId) {

@@ -55,7 +55,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         User seller = currentUserProvider.getCurrentUser();
 
-        if (seller.getRole() == UserRole.ADMIN) {
+        if (seller.getRole() == UserRole.ADMIN
+                || seller.getRole() == UserRole.SUPER_ADMIN) {
             throw new AdminCannotCreateAdvertisementException();
         }
 
@@ -185,7 +186,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         User currentUser = currentUserProvider.getCurrentUser();
 
         if (advertisement.getAdvertisementStatus() != AdvertisementStatus.ACTIVE
-                && currentUser.getRole() != UserRole.ADMIN) {
+                && currentUser.getRole() != UserRole.ADMIN
+                && currentUser.getRole() != UserRole.SUPER_ADMIN) {
             throw new AdvertisementAccessDeniedException(
                     advertisementId
             );
@@ -222,7 +224,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         AdvertisementStatus requestedStatus = status;
 
-        if (currentUser.getRole() != UserRole.ADMIN) {
+        if (currentUser.getRole() != UserRole.ADMIN
+                && currentUser.getRole() != UserRole.SUPER_ADMIN) {
             requestedStatus = AdvertisementStatus.ACTIVE;
         }
 
@@ -266,7 +269,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         AdvertisementFilter actualFilter = filter;
 
-        if (currentUser.getRole() != UserRole.ADMIN) {
+        if (currentUser.getRole() != UserRole.ADMIN
+                && currentUser.getRole() != UserRole.SUPER_ADMIN) {
             actualFilter = new AdvertisementFilter(
                     AdvertisementStatus.ACTIVE,
                     filter.categoryIds(),
@@ -369,7 +373,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         User currentUser = currentUserProvider.getCurrentUser();
 
-        if (currentUser.getRole() != UserRole.ADMIN) {
+        if (currentUser.getRole() != UserRole.ADMIN
+                && currentUser.getRole() != UserRole.SUPER_ADMIN) {
             throw new AdvertisementAccessDeniedException(
                     advertisementId
             );
@@ -403,7 +408,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         User currentUser = currentUserProvider.getCurrentUser();
 
-        if (currentUser.getRole() != UserRole.ADMIN) {
+        if (currentUser.getRole() != UserRole.ADMIN
+                && currentUser.getRole() != UserRole.SUPER_ADMIN) {
             throw new AdvertisementAccessDeniedException(
                     advertisementId
             );
