@@ -30,10 +30,14 @@ import ru.drmemex.classifieds.feature.region.exception.RegionNotFoundException;
 import ru.drmemex.classifieds.feature.region.repository.RegionRepository;
 import ru.drmemex.classifieds.feature.user.entity.User;
 import ru.drmemex.classifieds.feature.user.model.UserRole;
+import ru.drmemex.classifieds.kafka.event.AdvertisementLifecycleEvent;
+import ru.drmemex.classifieds.kafka.event.model.AdvertisementEventType;
+import ru.drmemex.classifieds.kafka.outbox.service.OutboxService;
 import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -48,6 +52,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     private final RegionRepository regionRepository;
     private final AdvertisementMapper advertisementMapper;
     private final CurrentUserProvider currentUserProvider;
+
+    private final OutboxService outboxService;
 
     @Override
     @Transactional
@@ -96,8 +102,16 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisement.setAdvertisementStatus(AdvertisementStatus.ACTIVE);
         advertisement.setCreatedAt(OffsetDateTime.now());
 
-        Advertisement savedAdvertisement =
-                advertisementRepository.save(advertisement);
+        Advertisement savedAdvertisement = advertisementRepository.save(advertisement);
+
+        AdvertisementLifecycleEvent event = new AdvertisementLifecycleEvent(
+                UUID.randomUUID(),
+                savedAdvertisement.getId(),
+                AdvertisementEventType.CREATED,
+                savedAdvertisement.getCreatedAt()
+        );
+
+        outboxService.saveAdvertisementEvent(event);
 
         log.info(
                 "Advertisement created: advertisementId={}, sellerId={}",
@@ -166,8 +180,17 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
-        Advertisement updatedAdvertisement =
-                advertisementRepository.update(advertisement);
+        Advertisement updatedAdvertisement = advertisementRepository.update(advertisement);
+
+        AdvertisementLifecycleEvent event =
+                new AdvertisementLifecycleEvent(
+                        UUID.randomUUID(),
+                        updatedAdvertisement.getId(),
+                        AdvertisementEventType.UPDATED,
+                        updatedAdvertisement.getUpdatedAt()
+                );
+
+        outboxService.saveAdvertisementEvent(event);
 
         log.info(
                 "Advertisement updated: advertisementId={}",
@@ -333,7 +356,22 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         );
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
-        advertisementRepository.update(advertisement);
+        Advertisement updatedAdvertisement = advertisementRepository.update(advertisement);
+
+        AdvertisementLifecycleEvent event =
+                new AdvertisementLifecycleEvent(
+                        UUID.randomUUID(),
+                        updatedAdvertisement.getId(),
+                        AdvertisementEventType.ACTIVATED,
+                        updatedAdvertisement.getUpdatedAt()
+                );
+
+        outboxService.saveAdvertisementEvent(event);
+
+        log.info(
+                "Advertisement activated: advertisementId={}",
+                advertisementId
+        );
 
         log.info(
                 "Advertisement activated: advertisementId={}",
@@ -359,7 +397,17 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         );
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
-        advertisementRepository.update(advertisement);
+        Advertisement updatedAdvertisement = advertisementRepository.update(advertisement);
+
+        AdvertisementLifecycleEvent event =
+                new AdvertisementLifecycleEvent(
+                        UUID.randomUUID(),
+                        updatedAdvertisement.getId(),
+                        AdvertisementEventType.DEACTIVATED,
+                        updatedAdvertisement.getUpdatedAt()
+                );
+
+        outboxService.saveAdvertisementEvent(event);
 
         log.info(
                 "Advertisement deactivated: advertisementId={}",
@@ -394,7 +442,17 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         );
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
-        advertisementRepository.update(advertisement);
+        Advertisement updatedAdvertisement = advertisementRepository.update(advertisement);
+
+        AdvertisementLifecycleEvent event =
+                new AdvertisementLifecycleEvent(
+                        UUID.randomUUID(),
+                        updatedAdvertisement.getId(),
+                        AdvertisementEventType.BLOCKED,
+                        updatedAdvertisement.getUpdatedAt()
+                );
+
+        outboxService.saveAdvertisementEvent(event);
 
         log.info(
                 "Advertisement blocked: advertisementId={}",
@@ -427,7 +485,17 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         );
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
-        advertisementRepository.update(advertisement);
+        Advertisement updatedAdvertisement = advertisementRepository.update(advertisement);
+
+        AdvertisementLifecycleEvent event =
+                new AdvertisementLifecycleEvent(
+                        UUID.randomUUID(),
+                        updatedAdvertisement.getId(),
+                        AdvertisementEventType.UNBLOCKED,
+                        updatedAdvertisement.getUpdatedAt()
+                );
+
+        outboxService.saveAdvertisementEvent(event);
 
         log.info(
                 "Advertisement unblocked: advertisementId={}",
@@ -455,7 +523,17 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         );
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
-        advertisementRepository.update(advertisement);
+        Advertisement updatedAdvertisement = advertisementRepository.update(advertisement);
+
+        AdvertisementLifecycleEvent event =
+                new AdvertisementLifecycleEvent(
+                        UUID.randomUUID(),
+                        updatedAdvertisement.getId(),
+                        AdvertisementEventType.DELETED,
+                        updatedAdvertisement.getUpdatedAt()
+                );
+
+        outboxService.saveAdvertisementEvent(event);
 
         log.info(
                 "Advertisement deleted: advertisementId={}",

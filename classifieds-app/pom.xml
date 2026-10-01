@@ -42,6 +42,12 @@
             <artifactId>liquibase-core</artifactId>
         </dependency>
 
+        <!-- Kafka -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
         <!-- Database -->
 
         <dependency>

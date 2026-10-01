@@ -3,9 +3,9 @@ spring:
     name: classifieds
 
   datasource:
-    url: jdbc:postgresql://localhost:4444/classifieds
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:4444/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -19,9 +19,25 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+    listener:
+      ack-mode: record
+
 server:
   port: 8080
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 3600000
+  expiration: ${JWT_EXPIRATION}

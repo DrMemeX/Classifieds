@@ -1,0 +1,10 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 040-create-event-statistics
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/040-create-event-statistics-table.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8

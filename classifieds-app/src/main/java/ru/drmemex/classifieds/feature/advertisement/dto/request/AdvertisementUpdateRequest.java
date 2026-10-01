@@ -20,6 +20,7 @@ public record AdvertisementUpdateRequest(
                 message = "Locality must not be blank"
         )
         @Size(
+                min = 2,
                 max = 100,
                 message = "Locality cannot exceed 100 characters"
         )
