@@ -1,8 +1,6 @@
 package ru.drmemex.classifieds.feature.user.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,19 +21,20 @@ import ru.drmemex.classifieds.feature.user.entity.UserProfile;
 import ru.drmemex.classifieds.feature.user.exception.AdminCannotBlockSelfException;
 import ru.drmemex.classifieds.feature.user.exception.DeletedUserCannotBeActivatedException;
 import ru.drmemex.classifieds.feature.user.exception.EmptyProfileUpdateException;
+import ru.drmemex.classifieds.feature.user.exception.LoginAlreadyExistsException;
+import ru.drmemex.classifieds.feature.user.exception.PhoneAlreadyExistsException;
 import ru.drmemex.classifieds.feature.user.exception.UserAlreadyActiveException;
 import ru.drmemex.classifieds.feature.user.exception.UserAlreadyBlockedException;
 import ru.drmemex.classifieds.feature.user.exception.UserNotFoundException;
-import ru.drmemex.classifieds.security.exception.InvalidCredentialsException;
-import ru.drmemex.classifieds.feature.user.exception.LoginAlreadyExistsException;
-import ru.drmemex.classifieds.feature.user.exception.PhoneAlreadyExistsException;
 import ru.drmemex.classifieds.feature.user.mapper.UserMapper;
 import ru.drmemex.classifieds.feature.user.model.UserRole;
 import ru.drmemex.classifieds.feature.user.model.UserStatus;
 import ru.drmemex.classifieds.feature.user.repository.UserProfileRepository;
 import ru.drmemex.classifieds.feature.user.repository.UserRepository;
 import ru.drmemex.classifieds.feature.user.service.UserService;
+import ru.drmemex.classifieds.security.exception.InvalidCredentialsException;
 import ru.drmemex.classifieds.security.jwt.service.JwtService;
+import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -56,6 +55,8 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
 
     private final UserMapper userMapper;
+
+    private final CurrentUserProvider currentUserProvider;
 
 
     @Override
@@ -111,7 +112,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void changeLogin(ChangeLoginUserRequest request) {
 
-        User user = getCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
 
         if (userRepository.existsByLogin(request.newLogin())) {
             throw new LoginAlreadyExistsException();
@@ -127,7 +128,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void changePassword(ChangePasswordUserRequest request) {
 
-        User user = getCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
 
         if (!passwordEncoder.matches(
                 request.currentPassword(),
@@ -149,7 +150,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public CurrentUserResponse getAccount() {
 
-        User user = getCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
 
         return userMapper.toCurrentUserResponse(
                 user,
@@ -167,7 +168,7 @@ public class UserServiceImpl implements UserService {
             throw new EmptyProfileUpdateException();
         }
 
-        User user = getCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
 
         UserProfile profile = user.getProfile();
 
@@ -199,7 +200,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteAccount() {
 
-        User user = getCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
 
         user.setStatus(UserStatus.DELETED);
         user.setLogin("deleted_" + user.getId());
@@ -245,7 +246,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void blockUser(Long id) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         if (currentUser.getId().equals(id)) {
             throw new AdminCannotBlockSelfException(
@@ -287,16 +288,6 @@ public class UserServiceImpl implements UserService {
         user.setBlockedAt(null);
 
         userRepository.update(user);
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        return userRepository.findByLoginAndStatus(
-                authentication.getName(),
-                UserStatus.ACTIVE
-        ).orElseThrow(InvalidCredentialsException::new);
     }
 
     private User createUser(

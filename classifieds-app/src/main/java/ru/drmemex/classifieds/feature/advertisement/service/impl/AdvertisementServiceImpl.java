@@ -1,8 +1,6 @@
 package ru.drmemex.classifieds.feature.advertisement.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementRequest;
@@ -27,9 +25,7 @@ import ru.drmemex.classifieds.feature.region.exception.RegionNotFoundException;
 import ru.drmemex.classifieds.feature.region.repository.RegionRepository;
 import ru.drmemex.classifieds.feature.user.entity.User;
 import ru.drmemex.classifieds.feature.user.model.UserRole;
-import ru.drmemex.classifieds.feature.user.model.UserStatus;
-import ru.drmemex.classifieds.feature.user.repository.UserRepository;
-import ru.drmemex.classifieds.security.exception.InvalidCredentialsException;
+import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -44,15 +40,15 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
     private final RegionRepository regionRepository;
 
-    private final UserRepository userRepository;
-
     private final AdvertisementMapper advertisementMapper;
+
+    private final CurrentUserProvider currentUserProvider;
 
     @Override
     @Transactional
     public AdvertisementResponse create(AdvertisementRequest request) {
 
-        User seller = getCurrentUser();
+        User seller = currentUserProvider.getCurrentUser();
 
         if (seller.getRole() == UserRole.ADMIN) {
             throw new AdminCannotCreateAdvertisementException();
@@ -147,7 +143,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         Advertisement advertisement = getAdvertisement(advertisementId);
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         if (advertisement.getAdvertisementStatus() != AdvertisementStatus.ACTIVE
                 && currentUser.getRole() != UserRole.ADMIN) {
@@ -166,7 +162,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
             AdvertisementStatus status
     ) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         AdvertisementStatus requestedStatus = status;
 
@@ -187,7 +183,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     @Transactional(readOnly = true)
     public List<AdvertisementResponse> search(AdvertisementFilter filter) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         AdvertisementFilter actualFilter = filter;
 
@@ -263,7 +259,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     @Transactional
     public void block(Long advertisementId) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         if (currentUser.getRole() != UserRole.ADMIN) {
             throw new AdvertisementAccessDeniedException(
@@ -292,7 +288,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     @Transactional
     public void unblock(Long advertisementId) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         if (currentUser.getRole() != UserRole.ADMIN) {
             throw new AdvertisementAccessDeniedException(
@@ -344,23 +340,12 @@ public class AdvertisementServiceImpl implements AdvertisementService {
                         new AdvertisementNotFoundException(advertisementId));
     }
 
-    private User getCurrentUser() {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        return userRepository.findByLoginAndStatus(
-                authentication.getName(),
-                UserStatus.ACTIVE
-        ).orElseThrow(InvalidCredentialsException::new);
-    }
-
     private void checkOwner(Advertisement advertisement) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         if (!advertisement.getSeller().getId().equals(currentUser.getId())) {
             throw new AdvertisementAccessDeniedException(advertisement.getId());
         }
     }
-
 }
