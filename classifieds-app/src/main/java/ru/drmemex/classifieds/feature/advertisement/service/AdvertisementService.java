@@ -5,6 +5,7 @@ import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementUpdateRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementResponse;
+import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementSellerResponse;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
 import ru.drmemex.classifieds.feature.advertisement.filter.AdvertisementFilter;
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
@@ -21,6 +22,10 @@ public interface AdvertisementService {
     );
 
     AdvertisementResponse getById(
+            Long advertisementId
+    );
+
+    AdvertisementSellerResponse getSeller(
             Long advertisementId
     );
 

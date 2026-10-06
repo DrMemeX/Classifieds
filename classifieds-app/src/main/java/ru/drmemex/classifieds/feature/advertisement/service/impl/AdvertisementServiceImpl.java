@@ -9,6 +9,7 @@ import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementUpdateRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementResponse;
+import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementSellerResponse;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
 import ru.drmemex.classifieds.feature.advertisement.exception.AdminCannotCreateAdvertisementException;
 import ru.drmemex.classifieds.feature.advertisement.exception.AdvertisementAccessDeniedException;
@@ -191,6 +192,22 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         }
 
         return advertisementMapper.toResponse(advertisement);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdvertisementSellerResponse getSeller(Long advertisementId) {
+
+        Advertisement advertisement = getAdvertisement(advertisementId);
+
+        if (advertisement.getAdvertisementStatus()
+                != AdvertisementStatus.ACTIVE) {
+            throw new AdvertisementAccessDeniedException(
+                    advertisementId
+            );
+        }
+
+        return advertisementMapper.toSellerResponse(advertisement);
     }
 
     @Override

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,6 +23,7 @@ import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementUpdateRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementResponse;
+import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementSellerResponse;
 import ru.drmemex.classifieds.feature.advertisement.filter.AdvertisementFilter;
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
 import ru.drmemex.classifieds.feature.advertisement.service.AdvertisementService;
@@ -65,6 +67,17 @@ public class AdvertisementController {
             Long advertisementId
     ) {
         return advertisementService.getById(advertisementId);
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/{advertisementId}/seller")
+    public ResponseEntity<AdvertisementSellerResponse> getSeller(
+            @PathVariable
+            Long advertisementId
+    ) {
+        return ResponseEntity.ok(
+                advertisementService.getSeller(advertisementId)
+        );
     }
 
     @GetMapping("/seller/{sellerId}")
