@@ -6,6 +6,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
+import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
+import ru.drmemex.classifieds.feature.advertisement.repository.AdvertisementRepository;
 import ru.drmemex.classifieds.feature.user.dto.account.UpdateUserProfileRequest;
 import ru.drmemex.classifieds.feature.user.dto.account.CurrentUserResponse;
 import ru.drmemex.classifieds.feature.user.dto.admin.AdminUserResponse;
@@ -34,18 +37,19 @@ import ru.drmemex.classifieds.feature.user.repository.UserRepository;
 import ru.drmemex.classifieds.feature.user.service.UserService;
 import ru.drmemex.classifieds.security.jwt.service.JwtService;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
     private final UserProfileRepository userProfileRepository;
+
+    private final AdvertisementRepository advertisementRepository;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -55,6 +59,7 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
+    @Transactional
     public RegisterUserResponse registerUser(RegisterUserRequest request) {
 
         User user = createUser(
@@ -66,6 +71,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public RegisterUserResponse registerAdmin(RegisterUserRequest request) {
 
         User user = createUser(
@@ -77,6 +83,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public LoginUserResponse login(LoginUserRequest request) {
 
         User user = userRepository.findByLoginAndStatus(
@@ -101,6 +108,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void changeLogin(ChangeLoginUserRequest request) {
 
         User user = getCurrentUser();
@@ -110,12 +118,13 @@ public class UserServiceImpl implements UserService {
         }
 
         user.setLogin(request.newLogin());
-        user.setUpdatedAt(LocalDateTime.now());
+        user.setUpdatedAt(OffsetDateTime.now());
 
         userRepository.update(user);
     }
 
     @Override
+    @Transactional
     public void changePassword(ChangePasswordUserRequest request) {
 
         User user = getCurrentUser();
@@ -131,12 +140,13 @@ public class UserServiceImpl implements UserService {
                 passwordEncoder.encode(request.newPassword())
         );
 
-        user.setUpdatedAt(LocalDateTime.now());
+        user.setUpdatedAt(OffsetDateTime.now());
 
         userRepository.update(user);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CurrentUserResponse getAccount() {
 
         User user = getCurrentUser();
@@ -148,6 +158,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void updateProfile(UpdateUserProfileRequest request) {
 
         if (request.firstName() == null
@@ -178,13 +189,14 @@ public class UserServiceImpl implements UserService {
             profile.setPhone(request.phone());
         }
 
-        user.setUpdatedAt(LocalDateTime.now());
+        user.setUpdatedAt(OffsetDateTime.now());
 
-        userProfileRepository.save(profile);
+        userProfileRepository.update(profile);
         userRepository.update(user);
     }
 
     @Override
+    @Transactional
     public void deleteAccount() {
 
         User user = getCurrentUser();
@@ -197,10 +209,11 @@ public class UserServiceImpl implements UserService {
 
         userRepository.update(user);
 
-        //дописать логику с объявлениями
+        deactivateActiveAdvertisements(user.getId());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AdminUserResponse> getUsers(
             UserStatus status,
             UserRole role
@@ -216,10 +229,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AdminUserResponse getUser(Long id) {
 
         User user = userRepository.findById(id)
-                .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         return userMapper.toAdminUserResponse(
                 user,
@@ -228,41 +242,45 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void blockUser(Long id) {
 
         User currentUser = getCurrentUser();
 
         if (currentUser.getId().equals(id)) {
-            throw new AdminCannotBlockSelfException();
+            throw new AdminCannotBlockSelfException(
+                    currentUser.getId()
+            );
         }
 
         User user = userRepository.findById(id)
-                .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         if (user.getStatus() == UserStatus.BLOCKED) {
-            throw new UserAlreadyBlockedException();
+            throw new UserAlreadyBlockedException(id);
         }
 
         user.setStatus(UserStatus.BLOCKED);
-        user.setBlockedAt(LocalDateTime.now());
+        user.setBlockedAt(OffsetDateTime.now());
 
         userRepository.update(user);
 
-        //дописать логику с объявлениями
+        deactivateActiveAdvertisements(id);
     }
 
     @Override
+    @Transactional
     public void unblockUser(Long id) {
 
         User user = userRepository.findById(id)
-                .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         if (user.getStatus() == UserStatus.ACTIVE) {
-            throw new UserAlreadyActiveException();
+            throw new UserAlreadyActiveException(id);
         }
 
         if (user.getStatus() == UserStatus.DELETED) {
-            throw new DeletedUserCannotBeActivatedException();
+            throw new DeletedUserCannotBeActivatedException(id);
         }
 
         user.setStatus(UserStatus.ACTIVE);
@@ -299,7 +317,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(role);
         user.setStatus(UserStatus.ACTIVE);
-        user.setCreatedAt(LocalDateTime.now());
+        user.setCreatedAt(OffsetDateTime.now());
 
         user.setProfile(profile);
         profile.setUser(user);
@@ -309,4 +327,18 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+    private void deactivateActiveAdvertisements(Long sellerId) {
+
+        List<Advertisement> advertisements = advertisementRepository.findBySellerId(
+                sellerId,
+                AdvertisementStatus.ACTIVE
+        );
+
+        for (Advertisement advertisement : advertisements) {
+            advertisement.setAdvertisementStatus(AdvertisementStatus.INACTIVE);
+            advertisement.setUpdatedAt(OffsetDateTime.now());
+
+            advertisementRepository.update(advertisement);
+        }
+    }
 }

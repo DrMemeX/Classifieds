@@ -4,7 +4,7 @@ import ru.drmemex.classifieds.common.exception.ConflictException;
 
 public class CategoryAlreadyExistsException extends ConflictException {
 
-    public CategoryAlreadyExistsException() {
-        super("Category already exists");
+    public CategoryAlreadyExistsException(String name) {
+        super("Category with name '" + name + "' already exists");
     }
 }

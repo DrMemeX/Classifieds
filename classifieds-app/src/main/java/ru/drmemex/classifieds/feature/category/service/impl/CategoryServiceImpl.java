@@ -3,6 +3,7 @@ package ru.drmemex.classifieds.feature.category.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.drmemex.classifieds.common.util.string.StringNormalizer;
 import ru.drmemex.classifieds.feature.category.dto.request.CategoryRequest;
 import ru.drmemex.classifieds.feature.category.dto.response.CategoryResponse;
 import ru.drmemex.classifieds.feature.category.dto.response.CategoryTreeResponse;
@@ -12,6 +13,7 @@ import ru.drmemex.classifieds.feature.category.exception.CategoryAlreadyExistsEx
 import ru.drmemex.classifieds.feature.category.exception.CategoryAlreadyInactiveException;
 import ru.drmemex.classifieds.feature.category.exception.CategoryCannotBeItsOwnParentException;
 import ru.drmemex.classifieds.feature.category.exception.CategoryHasActiveChildrenException;
+import ru.drmemex.classifieds.feature.category.exception.CategoryHierarchyCycleException;
 import ru.drmemex.classifieds.feature.category.exception.CategoryNotFoundException;
 import ru.drmemex.classifieds.feature.category.exception.ParentCategoryIsInactiveException;
 import ru.drmemex.classifieds.feature.category.exception.SystemCategoryModificationException;
@@ -26,7 +28,6 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class CategoryServiceImpl implements CategoryService {
 
     private static final String MISC_CATEGORY_NAME = "Разное";
@@ -35,20 +36,28 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryMapper categoryMapper;
 
     @Override
+    @Transactional
     public CategoryResponse create(CategoryRequest request) {
 
-        if (categoryRepository.existsByName(request.name())) {
-            throw new CategoryAlreadyExistsException();
+        String name = StringNormalizer.normalizeDisplayName(request.name());
+        String comparableName = StringNormalizer.normalizeComparable(name);
+
+        if (categoryRepository.existsByName(comparableName)) {
+            throw new CategoryAlreadyExistsException(name);
         }
 
         Category category = categoryMapper.toEntity(request);
+        category.setName(name);
 
         if (request.parentName() != null) {
-            Category parent = categoryRepository.findByName(request.parentName())
-                    .orElseThrow(CategoryNotFoundException::new);
+
+            String parentName = StringNormalizer.normalizeComparable(request.parentName());
+
+            Category parent = categoryRepository.findByName(parentName)
+                    .orElseThrow(() -> new CategoryNotFoundException(parentName));
 
             if (!parent.getActive()) {
-                throw new ParentCategoryIsInactiveException();
+                throw new ParentCategoryIsInactiveException(parent.getId());
             }
 
             category.setParent(parent);
@@ -60,40 +69,50 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public CategoryResponse update(Long id, CategoryRequest request) {
 
         Category existingCategory = categoryRepository.findById(id)
-                .orElseThrow(CategoryNotFoundException::new);
+                .orElseThrow(() -> new CategoryNotFoundException(id));
+
+        String name = StringNormalizer.normalizeDisplayName(request.name());
 
         if (MISC_CATEGORY_NAME.equals(existingCategory.getName())
-                && !MISC_CATEGORY_NAME.equals(request.name())) {
-            throw new SystemCategoryModificationException();
+                && !MISC_CATEGORY_NAME.equals(name)) {
+            throw new SystemCategoryModificationException(
+                    existingCategory.getName()
+            );
         }
 
-        if (!existingCategory.getName().equals(request.name())
-                && categoryRepository.existsByName(request.name())) {
-            throw new CategoryAlreadyExistsException();
+        if (!existingCategory.getName().equals(name)
+                && categoryRepository.existsByName(
+                StringNormalizer.normalizeComparable(name)
+        )) {
+            throw new CategoryAlreadyExistsException(name);
         }
 
         Category parent = null;
 
         if (request.parentName() != null) {
 
-            parent = categoryRepository.findByName(request.parentName())
-                    .orElseThrow(CategoryNotFoundException::new);
+            String parentName =
+                    StringNormalizer.normalizeComparable(request.parentName());
+
+            parent = categoryRepository.findByName(parentName)
+                    .orElseThrow(() -> new CategoryNotFoundException(parentName));
 
             if (parent.getId().equals(id)) {
-                throw new CategoryCannotBeItsOwnParentException();
+                throw new CategoryCannotBeItsOwnParentException(id);
             }
 
             if (existingCategory.getActive() && !parent.getActive()) {
-                throw new ParentCategoryIsInactiveException();
+                throw new ParentCategoryIsInactiveException(parent.getId());
             }
 
             checkForCycle(id, parent.getId());
         }
 
-        existingCategory.setName(request.name());
+        existingCategory.setName(name);
         existingCategory.setParent(parent);
 
         return categoryMapper.toResponse(
@@ -116,25 +135,38 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional(readOnly = true)
     public CategoryResponse getById(Long id) {
-        return toResponse(categoryRepository.findById(id));
+        return toResponse(categoryRepository.findById(id), id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryResponse getActiveById(Long id) {
-        return toResponse(categoryRepository.findActiveById(id));
+        return toResponse(categoryRepository.findActiveById(id), id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryResponse getByName(String name) {
-        return toResponse(categoryRepository.findByName(name));
+
+        String normalizedName = StringNormalizer.normalizeComparable(name);
+
+        return toResponse(
+                categoryRepository.findByName(normalizedName),
+                normalizedName
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryResponse getActiveByName(String name) {
-        return toResponse(categoryRepository.findActiveByName(name));
+
+        String normalizedName =
+                StringNormalizer.normalizeComparable(name);
+
+        return toResponse(
+                categoryRepository.findActiveByName(normalizedName),
+                normalizedName
+        );
     }
 
     @Override
@@ -142,7 +174,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryTreeResponse getTreeById(Long id) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(CategoryNotFoundException::new);
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
         return buildTreeResponse(category, false);
     }
@@ -152,7 +184,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryTreeResponse getActiveTreeById(Long id) {
 
         Category category = categoryRepository.findActiveById(id)
-                .orElseThrow(CategoryNotFoundException::new);
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
         return buildTreeResponse(category, true);
     }
@@ -174,9 +206,11 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryResponse> getChildren(Long parentId) {
 
         categoryRepository.findById(parentId)
-                .orElseThrow(CategoryNotFoundException::new);
+                .orElseThrow(() -> new CategoryNotFoundException(parentId));
 
-        return toResponses(categoryRepository.findChildren(parentId));
+        return toResponses(
+                categoryRepository.findChildren(parentId)
+        );
     }
 
     @Override
@@ -184,24 +218,27 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryResponse> getActiveChildren(Long parentId) {
 
         categoryRepository.findActiveById(parentId)
-                .orElseThrow(CategoryNotFoundException::new);
+                .orElseThrow(() -> new CategoryNotFoundException(parentId));
 
         return toResponses(categoryRepository.findActiveChildren(parentId));
     }
 
     @Override
+    @Transactional
     public void activate(Long id) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(CategoryNotFoundException::new);
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
         if (category.getActive()) {
-            throw new CategoryAlreadyActiveException();
+            throw new CategoryAlreadyActiveException(id);
         }
 
         if (category.getParent() != null
                 && !category.getParent().getActive()) {
-            throw new ParentCategoryIsInactiveException();
+            throw new ParentCategoryIsInactiveException(
+                    category.getParent().getId()
+            );
         }
 
         category.setActive(true);
@@ -210,21 +247,24 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public void deactivate(Long id) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(CategoryNotFoundException::new);
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
         if (MISC_CATEGORY_NAME.equals(category.getName())) {
-            throw new SystemCategoryModificationException();
+            throw new SystemCategoryModificationException(
+                    category.getName()
+            );
         }
 
         if (!category.getActive()) {
-            throw new CategoryAlreadyInactiveException();
+            throw new CategoryAlreadyInactiveException(id);
         }
 
         if (categoryRepository.existsActiveChildren(category.getId())) {
-            throw new CategoryHasActiveChildrenException();
+            throw new CategoryHasActiveChildrenException(id);
         }
 
         category.setActive(false);
@@ -232,13 +272,27 @@ public class CategoryServiceImpl implements CategoryService {
         categoryRepository.update(category);
     }
 
-    private CategoryResponse toResponse(Optional<Category> category) {
+    private CategoryResponse toResponse(
+            Optional<Category> category,
+            Long id
+    ) {
         return categoryMapper.toResponse(
-                category.orElseThrow(CategoryNotFoundException::new)
+                category.orElseThrow(() -> new CategoryNotFoundException(id))
         );
     }
 
-    private List<CategoryResponse> toResponses(List<Category> categories) {
+    private CategoryResponse toResponse(
+            Optional<Category> category,
+            String name
+    ) {
+        return categoryMapper.toResponse(
+                category.orElseThrow(() -> new CategoryNotFoundException(name))
+        );
+    }
+
+    private List<CategoryResponse> toResponses(
+            List<Category> categories
+    ) {
         return categories.stream()
                 .map(categoryMapper::toResponse)
                 .toList();
@@ -293,15 +347,17 @@ public class CategoryServiceImpl implements CategoryService {
         while (currentParentId != null) {
 
             if (!visited.add(currentParentId)) {
-                throw new CategoryCannotBeItsOwnParentException();
+                throw new CategoryHierarchyCycleException(categoryId);
             }
 
             if (currentParentId.equals(categoryId)) {
-                throw new CategoryCannotBeItsOwnParentException();
+                throw new CategoryCannotBeItsOwnParentException(categoryId);
             }
 
-            Category parent = categoryRepository.findById(currentParentId)
-                    .orElseThrow(CategoryNotFoundException::new);
+            Long currentId = currentParentId;
+
+            Category parent = categoryRepository.findById(currentId)
+                    .orElseThrow(() -> new CategoryNotFoundException(currentId));
 
             currentParentId = parent.getParent() != null
                     ? parent.getParent().getId()

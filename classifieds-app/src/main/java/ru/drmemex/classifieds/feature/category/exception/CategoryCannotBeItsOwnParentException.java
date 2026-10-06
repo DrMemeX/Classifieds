@@ -4,7 +4,7 @@ import ru.drmemex.classifieds.common.exception.ConflictException;
 
 public class CategoryCannotBeItsOwnParentException extends ConflictException {
 
-    public CategoryCannotBeItsOwnParentException() {
-        super("Category cannot be its own parent");
+    public CategoryCannotBeItsOwnParentException(Long id) {
+        super("Category with id " + id + " cannot be its own parent");
     }
 }

@@ -38,11 +38,11 @@ public class RegionRepositoryImpl implements RegionRepository {
                 """
                         SELECT *
                         FROM regions
-                        WHERE name % :name
-                        ORDER BY similarity(name, :name) Desc
+                        WHERE LOWER(name) % :name
+                        ORDER BY similarity(LOWER(name), :name) DESC
                         """, Region.class
         )
-                .setParameter("name", name.trim())
+                .setParameter("name", name)
                 .getResultList();
     }
 }
