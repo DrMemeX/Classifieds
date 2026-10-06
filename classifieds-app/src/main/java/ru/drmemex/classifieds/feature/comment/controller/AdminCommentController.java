@@ -22,7 +22,7 @@ import ru.drmemex.classifieds.feature.comment.service.CommentService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/comments")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class AdminCommentController {
 
     private final CommentService commentService;

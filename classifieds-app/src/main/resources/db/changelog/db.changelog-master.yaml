@@ -27,3 +27,7 @@ databaseChangeLog:
   - include:
       file: changes/007-make-user-profile-phone-nullable.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: changes/008-add-super-admin-role.yaml
+      relativeToChangelogFile: true
