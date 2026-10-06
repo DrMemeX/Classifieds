@@ -3,6 +3,8 @@ package ru.drmemex.classifieds.feature.conversation.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
 import ru.drmemex.classifieds.feature.advertisement.exception.AdvertisementNotFoundException;
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
@@ -22,6 +24,8 @@ import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+
+import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.buildPageResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -92,15 +96,29 @@ public class ConversationServiceImpl implements ConversationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ConversationResponse> getMyConversations() {
+    public PageResponse<ConversationResponse> getMyConversations(
+            PageRequest pageRequest
+    ) {
 
         User currentUser = currentUserProvider.getCurrentUser();
 
-        return conversationRepository
-                .findByParticipantId(currentUser.getId())
+        List<ConversationResponse> content = conversationRepository
+                .findByParticipantId(
+                        currentUser.getId(),
+                        pageRequest
+                )
                 .stream()
                 .map(conversationMapper::toResponse)
                 .toList();
+
+        long totalElements = conversationRepository
+                .countByParticipantId(currentUser.getId());
+
+        return buildPageResponse(
+                content,
+                pageRequest,
+                totalElements
+        );
     }
 
     @Override

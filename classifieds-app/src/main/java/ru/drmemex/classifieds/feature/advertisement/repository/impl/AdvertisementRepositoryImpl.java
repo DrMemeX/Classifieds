@@ -5,6 +5,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
 import ru.drmemex.classifieds.common.util.string.StringNormalizer;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
 import ru.drmemex.classifieds.feature.advertisement.filter.AdvertisementFilter;
@@ -13,8 +14,11 @@ import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
 import ru.drmemex.classifieds.feature.advertisement.model.SortDirection;
 import ru.drmemex.classifieds.feature.advertisement.repository.AdvertisementRepository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.applyPagination;
 
 @Repository
 public class AdvertisementRepositoryImpl implements AdvertisementRepository {
@@ -45,19 +49,41 @@ public class AdvertisementRepositoryImpl implements AdvertisementRepository {
             Long sellerId,
             AdvertisementStatus status
     ) {
+        return entityManager.createQuery(
+                        """
+                                SELECT a
+                                FROM Advertisement a
+                                WHERE a.seller.id = :sellerId
+                                AND a.advertisementStatus = :status
+                                ORDER BY a.createdAt DESC, a.id DESC
+                                """,
+                        Advertisement.class
+                )
+                .setParameter("sellerId", sellerId)
+                .setParameter("status", status)
+                .getResultList();
+    }
+
+    @Override
+    public List<Advertisement> findBySellerId(
+            Long sellerId,
+            AdvertisementStatus status,
+            PageRequest pageRequest
+    ) {
+
         StringBuilder jpql = new StringBuilder(
-                """
-                SELECT a
-                FROM Advertisement a
-                WHERE a.seller.id = :sellerId
-                """
+                        """
+                        SELECT a
+                        FROM Advertisement a
+                        WHERE a.seller.id = :sellerId
+                        """
         );
 
         if (status != null) {
             jpql.append(" AND a.advertisementStatus = :status");
         }
 
-        jpql.append(" ORDER BY a.createdAt DESC");
+        jpql.append(" ORDER BY a.createdAt DESC, a.id DESC");
 
         TypedQuery<Advertisement> query = entityManager.createQuery(
                 jpql.toString(),
@@ -70,11 +96,51 @@ public class AdvertisementRepositoryImpl implements AdvertisementRepository {
             query.setParameter("status", status);
         }
 
+        applyPagination(
+                query,
+                pageRequest
+        );
+
         return query.getResultList();
     }
 
     @Override
-    public List<Advertisement> findByFilters(AdvertisementFilter filter) {
+    public long countBySellerId(
+            Long sellerId,
+            AdvertisementStatus status
+    ) {
+
+        StringBuilder jpql = new StringBuilder(
+                        """
+                        SELECT COUNT(a)
+                        FROM Advertisement a
+                        WHERE a.seller.id = :sellerId
+                        """
+        );
+
+        if (status != null) {
+            jpql.append(" AND a.advertisementStatus = :status");
+        }
+
+        TypedQuery<Long> query = entityManager.createQuery(
+                jpql.toString(),
+                Long.class
+        );
+
+        query.setParameter("sellerId", sellerId);
+
+        if (status != null) {
+            query.setParameter("status", status);
+        }
+
+        return query.getSingleResult();
+    }
+
+    @Override
+    public List<Advertisement> findByFilters(
+            AdvertisementFilter filter,
+            PageRequest pageRequest
+    ) {
 
         String locality = filter.locality() == null
                 ? null
@@ -84,59 +150,27 @@ public class AdvertisementRepositoryImpl implements AdvertisementRepository {
                 ? null
                 : StringNormalizer.normalizeComparable(filter.title());
 
-        boolean hasStatus = filter.status() != null;
-
-        boolean hasCategories =
-                filter.categoryIds() != null && !filter.categoryIds().isEmpty();
-        boolean hasRegions =
-                filter.regionIds() != null && !filter.regionIds().isEmpty();
-
-        boolean hasLocality = locality != null && !locality.isBlank();
-        boolean hasTitle = title != null && !title.isBlank();
-
-        boolean hasMinPrice = filter.minPrice() != null;
-        boolean hasMaxPrice = filter.maxPrice() != null;
-
         StringBuilder sql = new StringBuilder(
-                """
-                SELECT *
-                FROM advertisements
-                WHERE 1 = 1
-                """
+                        """
+                        SELECT *
+                        FROM advertisements
+                        """
         );
 
-        if (hasStatus) {
-            sql.append(" AND status = :status");
-        }
-
-        if (hasCategories) {
-            sql.append(" AND category_id IN (:categoryIds)");
-        }
-
-        if (hasRegions) {
-            sql.append(" AND region_id IN (:regionIds)");
-        }
-
-        if (hasLocality) {
-            sql.append(" AND LOWER(locality) % :locality");
-        }
-
-        if (hasTitle) {
-            sql.append(" AND LOWER(title) % :title");
-        }
-
-        if (hasMinPrice) {
-            sql.append(" AND price >= :minPrice");
-        }
-
-        if (hasMaxPrice) {
-            sql.append(" AND price <= :maxPrice");
-        }
+        sql.append(
+                buildWhereClause(
+                        filter,
+                        locality,
+                        title
+                )
+        );
 
         sql.append(" ORDER BY ");
 
-        if (hasTitle) {
-            sql.append("similarity(LOWER(title), :title) DESC, ");
+        if (title != null && !title.isBlank()) {
+            sql.append(
+                    "similarity(LOWER(title), :title) DESC, "
+            );
         }
 
         if (filter.sortField() == AdvertisementSortField.PRICE) {
@@ -146,9 +180,9 @@ public class AdvertisementRepositoryImpl implements AdvertisementRepository {
         }
 
         if (filter.sortDirection() == SortDirection.ASC) {
-            sql.append("ASC");
+            sql.append("ASC, id ASC");
         } else {
-            sql.append("DESC");
+            sql.append("DESC, id DESC");
         }
 
         Query query = entityManager.createNativeQuery(
@@ -156,37 +190,184 @@ public class AdvertisementRepositoryImpl implements AdvertisementRepository {
                 Advertisement.class
         );
 
-        if (hasStatus) {
-            query.setParameter("status", filter.status().name());
-        }
+        setFilterParameters(
+                query,
+                filter,
+                locality,
+                title
+        );
 
-        if (hasCategories) {
-            query.setParameter("categoryIds", filter.categoryIds());
-        }
-
-        if (hasRegions) {
-            query.setParameter("regionIds", filter.regionIds());
-        }
-
-        if (hasLocality) {
-            query.setParameter("locality", locality);
-        }
-
-        if (hasTitle) {
-            query.setParameter("title", title);
-        }
-
-        if (hasMinPrice) {
-            query.setParameter("minPrice", filter.minPrice());
-        }
-
-        if (hasMaxPrice) {
-            query.setParameter("maxPrice", filter.maxPrice());
-        }
+        applyPagination(
+                query,
+                pageRequest
+        );
 
         @SuppressWarnings("unchecked")
         List<Advertisement> result = query.getResultList();
 
         return result;
+    }
+
+    @Override
+    public long countByFilters(AdvertisementFilter filter) {
+
+        String locality = filter.locality() == null
+                ? null
+                : StringNormalizer.normalizeComparable(filter.locality());
+
+        String title = filter.title() == null
+                ? null
+                : StringNormalizer.normalizeComparable(filter.title());
+
+        StringBuilder sql = new StringBuilder(
+                        """
+                        SELECT COUNT(*)
+                        FROM advertisements
+                        """
+        );
+
+        sql.append(
+                buildWhereClause(
+                        filter,
+                        locality,
+                        title
+                )
+        );
+
+        Query query = entityManager.createNativeQuery(
+                sql.toString()
+        );
+
+        setFilterParameters(
+                query,
+                filter,
+                locality,
+                title
+        );
+
+        return ((Number) query.getSingleResult()).longValue();
+    }
+
+    @Override
+    public long countBySellerIdAndCreatedAtAfter(
+            Long sellerId,
+            OffsetDateTime createdAfter
+    ) {
+        return entityManager.createQuery(
+                        """
+                                SELECT COUNT(a)
+                                FROM Advertisement a
+                                WHERE a.seller.id = :sellerId
+                                AND a.createdAt >= :createdAfter
+                                """,
+                        Long.class
+                )
+                .setParameter("sellerId", sellerId)
+                .setParameter("createdAfter", createdAfter)
+                .getSingleResult();
+    }
+
+    private String buildWhereClause(
+            AdvertisementFilter filter,
+            String locality,
+            String title
+    ) {
+
+        StringBuilder sql = new StringBuilder(
+                        """
+                        WHERE 1 = 1
+                        """
+        );
+
+        if (filter.status() != null) {
+            sql.append(" AND status = :status");
+        }
+
+        if (filter.categoryIds() != null
+                && !filter.categoryIds().isEmpty()) {
+            sql.append(" AND category_id IN (:categoryIds)");
+        }
+
+        if (filter.regionIds() != null
+                && !filter.regionIds().isEmpty()) {
+            sql.append(" AND region_id IN (:regionIds)");
+        }
+
+        if (locality != null && !locality.isBlank()) {
+            sql.append(" AND LOWER(locality) % :locality");
+        }
+
+        if (title != null && !title.isBlank()) {
+            sql.append(" AND LOWER(title) % :title");
+        }
+
+        if (filter.minPrice() != null) {
+            sql.append(" AND price >= :minPrice");
+        }
+
+        if (filter.maxPrice() != null) {
+            sql.append(" AND price <= :maxPrice");
+        }
+
+        return sql.toString();
+    }
+
+    private void setFilterParameters(
+            Query query,
+            AdvertisementFilter filter,
+            String locality,
+            String title
+    ) {
+
+        if (filter.status() != null) {
+            query.setParameter(
+                    "status",
+                    filter.status().name()
+            );
+        }
+
+        if (filter.categoryIds() != null
+                && !filter.categoryIds().isEmpty()) {
+            query.setParameter(
+                    "categoryIds",
+                    filter.categoryIds()
+            );
+        }
+
+        if (filter.regionIds() != null
+                && !filter.regionIds().isEmpty()) {
+            query.setParameter(
+                    "regionIds",
+                    filter.regionIds()
+            );
+        }
+
+        if (locality != null && !locality.isBlank()) {
+            query.setParameter(
+                    "locality",
+                    locality
+            );
+        }
+
+        if (title != null && !title.isBlank()) {
+            query.setParameter(
+                    "title",
+                    title
+            );
+        }
+
+        if (filter.minPrice() != null) {
+            query.setParameter(
+                    "minPrice",
+                    filter.minPrice()
+            );
+        }
+
+        if (filter.maxPrice() != null) {
+            query.setParameter(
+                    "maxPrice",
+                    filter.maxPrice()
+            );
+        }
     }
 }

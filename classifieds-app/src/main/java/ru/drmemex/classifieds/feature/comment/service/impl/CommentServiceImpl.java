@@ -3,6 +3,8 @@ package ru.drmemex.classifieds.feature.comment.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
 import ru.drmemex.classifieds.feature.advertisement.service.AdvertisementService;
@@ -23,9 +25,14 @@ import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.buildPageResponse;
+
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
+
+    private static final int COMMENT_RATE_LIMIT = 5;
+    private static final int COMMENT_RATE_LIMIT_WINDOW_MINUTES = 1;
 
     private final CurrentUserProvider currentUserProvider;
     private final CommentRepository commentRepository;
@@ -51,16 +58,18 @@ public class CommentServiceImpl implements CommentService {
             );
         }
 
-        OffsetDateTime oneMinuteAgo =
-                OffsetDateTime.now().minusMinutes(1);
+        OffsetDateTime rateLimitWindowStart =
+                OffsetDateTime.now().minusMinutes(
+                        COMMENT_RATE_LIMIT_WINDOW_MINUTES
+                );
 
         long recentComments = commentRepository
                 .countByAuthorIdAndCreatedAtAfter(
                         currentUser.getId(),
-                        oneMinuteAgo
+                        rateLimitWindowStart
                 );
 
-        if (recentComments >= 5) {
+        if (recentComments >= COMMENT_RATE_LIMIT) {
             throw new CommentRateLimitExceededException();
         }
 
@@ -78,17 +87,30 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CommentResponse> getByAdvertisementId(
-            Long advertisementId
+    public PageResponse<CommentResponse> getByAdvertisementId(
+            Long advertisementId,
+            PageRequest pageRequest
     ) {
 
         advertisementService.getById(advertisementId);
 
-        return commentRepository
-                .findByAdvertisementId(advertisementId)
+        List<CommentResponse> content = commentRepository
+                .findByAdvertisementId(
+                        advertisementId,
+                        pageRequest
+                )
                 .stream()
                 .map(commentMapper::toResponse)
                 .toList();
+
+        long totalElements = commentRepository
+                .countByAdvertisementId(advertisementId);
+
+        return buildPageResponse(
+                content,
+                pageRequest,
+                totalElements
+        );
     }
 
     @Override

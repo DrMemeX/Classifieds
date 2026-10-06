@@ -33,18 +33,6 @@ public class UserProfileRepositoryImpl implements UserProfileRepository {
     }
 
     @Override
-    public Optional<UserProfile> findByPhone(String phone) {
-        return entityManager.createQuery(
-                        "SELECT up FROM UserProfile up WHERE up.phone = :phone",
-                        UserProfile.class
-                )
-                .setParameter("phone", phone)
-                .getResultList()
-                .stream()
-                .findFirst();
-    }
-
-    @Override
     public boolean existsByPhone(String phone) {
         Long count = entityManager.createQuery(
                         "SELECT COUNT(up) FROM UserProfile up WHERE up.phone = :phone",

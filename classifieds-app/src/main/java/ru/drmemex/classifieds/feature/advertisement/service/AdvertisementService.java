@@ -1,12 +1,13 @@
 package ru.drmemex.classifieds.feature.advertisement.service;
 
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementUpdateRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementResponse;
+import ru.drmemex.classifieds.feature.advertisement.entity.Advertisement;
 import ru.drmemex.classifieds.feature.advertisement.filter.AdvertisementFilter;
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
-
-import java.util.List;
 
 public interface AdvertisementService {
 
@@ -23,13 +24,15 @@ public interface AdvertisementService {
             Long advertisementId
     );
 
-    List<AdvertisementResponse> getSellerAdvertisements(
+    PageResponse<AdvertisementResponse> getSellerAdvertisements(
             Long sellerId,
-            AdvertisementStatus status
+            AdvertisementStatus status,
+            PageRequest pageRequest
     );
 
-    List<AdvertisementResponse> search(
-            AdvertisementFilter filter
+    PageResponse<AdvertisementResponse> search(
+            AdvertisementFilter filter,
+            PageRequest pageRequest
     );
 
     void activate(Long advertisementId);
@@ -42,4 +45,5 @@ public interface AdvertisementService {
 
     void delete(Long advertisementId);
 
+    Advertisement getAdvertisement(Long advertisementId);
 }

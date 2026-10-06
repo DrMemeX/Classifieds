@@ -3,6 +3,8 @@ package ru.drmemex.classifieds.feature.advertisement.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageResponse;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.request.AdvertisementUpdateRequest;
 import ru.drmemex.classifieds.feature.advertisement.dto.response.AdvertisementResponse;
@@ -11,6 +13,7 @@ import ru.drmemex.classifieds.feature.advertisement.exception.AdminCannotCreateA
 import ru.drmemex.classifieds.feature.advertisement.exception.AdvertisementAccessDeniedException;
 import ru.drmemex.classifieds.feature.advertisement.exception.AdvertisementCategoryInactiveException;
 import ru.drmemex.classifieds.feature.advertisement.exception.AdvertisementNotFoundException;
+import ru.drmemex.classifieds.feature.advertisement.exception.AdvertisementRateLimitExceededException;
 import ru.drmemex.classifieds.feature.advertisement.exception.InvalidAdvertisementStatusException;
 import ru.drmemex.classifieds.feature.advertisement.filter.AdvertisementFilter;
 import ru.drmemex.classifieds.feature.advertisement.mapper.AdvertisementMapper;
@@ -34,14 +37,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdvertisementServiceImpl implements AdvertisementService {
 
+    private static final int ADVERTISEMENT_RATE_LIMIT = 3;
+    private static final int ADVERTISEMENT_RATE_LIMIT_WINDOW_MINUTES = 1;
+
     private final AdvertisementRepository advertisementRepository;
-
     private final CategoryRepository categoryRepository;
-
     private final RegionRepository regionRepository;
-
     private final AdvertisementMapper advertisementMapper;
-
     private final CurrentUserProvider currentUserProvider;
 
     @Override
@@ -60,6 +62,21 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         Region region = regionRepository.findById(request.regionId())
                 .orElseThrow(RegionNotFoundException::new);
+
+        OffsetDateTime rateLimitWindowStart =
+                OffsetDateTime.now().minusMinutes(
+                        ADVERTISEMENT_RATE_LIMIT_WINDOW_MINUTES
+                );
+
+        long recentAdvertisements = advertisementRepository
+                .countBySellerIdAndCreatedAtAfter(
+                        seller.getId(),
+                        rateLimitWindowStart
+                );
+
+        if (recentAdvertisements >= ADVERTISEMENT_RATE_LIMIT) {
+            throw new AdvertisementRateLimitExceededException();
+        }
 
         Advertisement advertisement = advertisementMapper.toEntity(request);
 
@@ -157,9 +174,10 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AdvertisementResponse> getSellerAdvertisements(
+    public PageResponse<AdvertisementResponse> getSellerAdvertisements(
             Long sellerId,
-            AdvertisementStatus status
+            AdvertisementStatus status,
+            PageRequest pageRequest
     ) {
 
         User currentUser = currentUserProvider.getCurrentUser();
@@ -170,18 +188,41 @@ public class AdvertisementServiceImpl implements AdvertisementService {
             requestedStatus = AdvertisementStatus.ACTIVE;
         }
 
-        return advertisementRepository.findBySellerId(
+        List<AdvertisementResponse> content = advertisementRepository
+                .findBySellerId(
                         sellerId,
-                        requestedStatus
+                        requestedStatus,
+                        pageRequest
                 )
                 .stream()
                 .map(advertisementMapper::toResponse)
                 .toList();
+
+        long totalElements = advertisementRepository
+                .countBySellerId(
+                        sellerId,
+                        requestedStatus
+                );
+
+        int totalPages = (int) Math.ceil(
+                (double) totalElements / pageRequest.size()
+        );
+
+        return new PageResponse<>(
+                content,
+                pageRequest.page(),
+                pageRequest.size(),
+                totalElements,
+                totalPages
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<AdvertisementResponse> search(AdvertisementFilter filter) {
+    public PageResponse<AdvertisementResponse> search(
+            AdvertisementFilter filter,
+            PageRequest pageRequest
+    ) {
 
         User currentUser = currentUserProvider.getCurrentUser();
 
@@ -201,10 +242,29 @@ public class AdvertisementServiceImpl implements AdvertisementService {
             );
         }
 
-        return advertisementRepository.findByFilters(actualFilter)
+        List<AdvertisementResponse> content = advertisementRepository
+                .findByFilters(
+                        actualFilter,
+                        pageRequest
+                )
                 .stream()
                 .map(advertisementMapper::toResponse)
                 .toList();
+
+        long totalElements = advertisementRepository
+                .countByFilters(actualFilter);
+
+        int totalPages = (int) Math.ceil(
+                (double) totalElements / pageRequest.size()
+        );
+
+        return new PageResponse<>(
+                content,
+                pageRequest.page(),
+                pageRequest.size(),
+                totalElements,
+                totalPages
+        );
     }
 
     @Override
@@ -334,7 +394,9 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisementRepository.update(advertisement);
     }
 
-    private Advertisement getAdvertisement(Long advertisementId) {
+    @Override
+    @Transactional(readOnly = true)
+    public Advertisement getAdvertisement(Long advertisementId) {
         return advertisementRepository.findById(advertisementId)
                 .orElseThrow(() ->
                         new AdvertisementNotFoundException(advertisementId));

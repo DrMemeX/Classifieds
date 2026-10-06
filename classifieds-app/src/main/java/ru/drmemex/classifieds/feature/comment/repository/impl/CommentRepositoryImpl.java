@@ -4,12 +4,15 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
+import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
 import ru.drmemex.classifieds.feature.comment.entity.Comment;
 import ru.drmemex.classifieds.feature.comment.repository.CommentRepository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.applyPagination;
 
 @Repository
 public class CommentRepositoryImpl implements CommentRepository {
@@ -31,7 +34,10 @@ public class CommentRepositoryImpl implements CommentRepository {
     }
 
     @Override
-    public List<Comment> findByAdvertisementId(Long advertisementId) {
+    public List<Comment> findByAdvertisementId(
+            Long advertisementId,
+            PageRequest pageRequest
+    ) {
         TypedQuery<Comment> query = entityManager.createQuery(
                 """
                         SELECT c
@@ -44,7 +50,26 @@ public class CommentRepositoryImpl implements CommentRepository {
 
         query.setParameter("advertisementId", advertisementId);
 
+        applyPagination(
+                query,
+                pageRequest
+        );
+
         return query.getResultList();
+    }
+
+    @Override
+    public long countByAdvertisementId(Long advertisementId) {
+        return entityManager.createQuery(
+                        """
+                                SELECT COUNT(c)
+                                FROM Comment c
+                                WHERE c.advertisement.id = :advertisementId
+                                """,
+                        Long.class
+                )
+                .setParameter("advertisementId", advertisementId)
+                .getSingleResult();
     }
 
     @Override
