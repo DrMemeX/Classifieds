@@ -86,8 +86,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         String name = StringNormalizer.normalizeDisplayName(request.name());
 
-        if (MISC_CATEGORY_NAME.equals(existingCategory.getName())
-                && !MISC_CATEGORY_NAME.equals(name)) {
+        if (MISC_CATEGORY_NAME.equals(existingCategory.getName())) {
             throw new SystemCategoryModificationException(
                     existingCategory.getName()
             );
@@ -376,7 +375,7 @@ public class CategoryServiceImpl implements CategoryService {
             }
 
             if (currentParentId.equals(categoryId)) {
-                throw new CategoryCannotBeItsOwnParentException(categoryId);
+                throw new CategoryHierarchyCycleException(categoryId);
             }
 
             Long currentId = currentParentId;
