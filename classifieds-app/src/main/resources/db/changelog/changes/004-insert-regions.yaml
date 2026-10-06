@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 031-insert-regions
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/031-insert-regions.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
