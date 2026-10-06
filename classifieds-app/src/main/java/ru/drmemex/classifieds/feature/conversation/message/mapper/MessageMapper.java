@@ -8,7 +8,11 @@ import ru.drmemex.classifieds.feature.conversation.message.entity.Message;
 @Mapper(componentModel = "spring")
 public interface MessageMapper {
 
-    @Mapping(target = "conversationId", source = "conversation.id")
-    @Mapping(target = "authorId", source = "author.id")
-    MessageResponse toResponse(Message message);
+    @Mapping(target = "conversationId", source = "message.conversation.id")
+    @Mapping(target = "authorId", source = "message.author.id")
+    @Mapping(target = "text", source = "text")
+    MessageResponse toResponse(
+            Message message,
+            String text
+    );
 }

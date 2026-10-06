@@ -41,3 +41,6 @@ server:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
+
+message-encryption:
+  key: ${MESSAGE_ENCRYPTION_KEY}

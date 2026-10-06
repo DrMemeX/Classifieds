@@ -1,0 +1,8 @@
+TRUNCATE TABLE messages;
+
+ALTER TABLE messages
+DROP COLUMN text;
+
+ALTER TABLE messages
+    ADD COLUMN encrypted_text TEXT NOT NULL,
+    ADD COLUMN iv VARCHAR(16) NOT NULL;

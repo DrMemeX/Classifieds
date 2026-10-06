@@ -7,14 +7,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.kafka.event.AdvertisementLifecycleEvent;
 import ru.drmemex.classifieds.kafka.event.UserLifecycleEvent;
+import ru.drmemex.classifieds.kafka.exception.KafkaEventSerializationException;
 import ru.drmemex.classifieds.kafka.outbox.entity.OutboxEvent;
 import ru.drmemex.classifieds.kafka.outbox.repository.OutboxEventRepository;
 import ru.drmemex.classifieds.kafka.outbox.service.OutboxService;
 
 import java.time.OffsetDateTime;
 
-import static ru.drmemex.classifieds.kafka.config.KafkaTopicConfig.ADVERTISEMENT_LIFECYCLE_TOPIC;
-import static ru.drmemex.classifieds.kafka.config.KafkaTopicConfig.USER_LIFECYCLE_TOPIC;
+import static ru.drmemex.classifieds.kafka.KafkaTopic.ADVERTISEMENT_LIFECYCLE_TOPIC;
+import static ru.drmemex.classifieds.kafka.KafkaTopic.USER_LIFECYCLE_TOPIC;
 
 @Service
 @RequiredArgsConstructor
@@ -63,8 +64,10 @@ public class OutboxServiceImpl implements OutboxService {
     private String toJson(Object event) {
         try {
             return objectMapper.writeValueAsString(event);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to serialize outbox event", e);
+        } catch (JsonProcessingException exception) {
+            throw new KafkaEventSerializationException(
+                    "Failed to serialize outbox event",
+                    exception);
         }
     }
 }

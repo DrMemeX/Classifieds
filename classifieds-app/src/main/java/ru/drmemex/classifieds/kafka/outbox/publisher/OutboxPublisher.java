@@ -6,6 +6,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import ru.drmemex.classifieds.kafka.exception.KafkaPublishingException;
 import ru.drmemex.classifieds.kafka.outbox.entity.OutboxEvent;
 import ru.drmemex.classifieds.kafka.outbox.repository.OutboxEventRepository;
 
@@ -56,12 +57,12 @@ public class OutboxPublisher {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
 
-            throw new IllegalStateException(
+            throw new KafkaPublishingException(
                     "Outbox event publishing interrupted",
                     exception
             );
         } catch (ExecutionException exception) {
-            throw new IllegalStateException(
+            throw new KafkaPublishingException(
                     "Failed to publish outbox event",
                     exception
             );

@@ -18,6 +18,8 @@
 
     <modules>
         <module>classifieds-app</module>
+        <module>classifieds-audit-app</module>
+        <module>classifieds-kafka-contract</module>
     </modules>
 
     <properties>

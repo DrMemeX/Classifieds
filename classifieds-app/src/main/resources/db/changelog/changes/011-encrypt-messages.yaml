@@ -1,0 +1,10 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 039-encrypt-messages
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/039-encrypt-messages.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8

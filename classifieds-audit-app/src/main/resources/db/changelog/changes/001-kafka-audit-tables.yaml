@@ -1,0 +1,28 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 001-create-event-history
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/001-create-event-history.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 002-create-event-statistics
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/002-create-event-statistics.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8
+
+  - changeSet:
+      id: 003-create-processed-kafka-events
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/003-create-processed-kafka-events.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8

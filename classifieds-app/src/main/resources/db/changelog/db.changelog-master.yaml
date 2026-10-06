@@ -41,13 +41,5 @@ databaseChangeLog:
       relativeToChangelogFile: true
 
   - include:
-      file: changes/011-create-event-history.yaml
-      relativeToChangelogFile: true
-
-  - include:
-      file: changes/012-create-event-statistics.yaml
-      relativeToChangelogFile: true
-
-  - include:
-      file: changes/013-create-processed-kafka-events.yaml
+      file: changes/011-encrypt-messages.yaml
       relativeToChangelogFile: true

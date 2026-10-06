@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,6 +35,9 @@ import ru.drmemex.classifieds.feature.region.exception.RegionNotFoundException;
 import ru.drmemex.classifieds.feature.region.repository.RegionRepository;
 import ru.drmemex.classifieds.feature.user.entity.User;
 import ru.drmemex.classifieds.feature.user.model.UserRole;
+import ru.drmemex.classifieds.kafka.event.AdvertisementLifecycleEvent;
+import ru.drmemex.classifieds.kafka.event.model.AdvertisementEventType;
+import ru.drmemex.classifieds.kafka.outbox.service.OutboxService;
 import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 
 import java.math.BigDecimal;
@@ -67,6 +71,9 @@ public class AdvertisementServiceImplTest {
 
     @Mock
     private CurrentUserProvider currentUserProvider;
+
+    @Mock
+    private OutboxService outboxService;
 
     @InjectMocks
     private AdvertisementServiceImpl advertisementService;
@@ -109,9 +116,7 @@ public class AdvertisementServiceImplTest {
                 .thenReturn(2L);
 
         Advertisement advertisement = new Advertisement();
-
-        Advertisement savedAdvertisement = new Advertisement();
-        savedAdvertisement.setId(1L);
+        advertisement.setId(1L);
 
         AdvertisementResponse expectedResponse = new AdvertisementResponse(
                 1L,
@@ -131,9 +136,9 @@ public class AdvertisementServiceImplTest {
                 .thenReturn(advertisement);
 
         when(advertisementRepository.save(advertisement))
-                .thenReturn(savedAdvertisement);
+                .thenReturn(advertisement);
 
-        when(advertisementMapper.toResponse(savedAdvertisement))
+        when(advertisementMapper.toResponse(advertisement))
                 .thenReturn(expectedResponse);
 
         AdvertisementResponse result = advertisementService.create(request);
@@ -169,6 +174,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .save(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.CREATED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getCreatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @ParameterizedTest
@@ -436,6 +467,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.UPDATED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -554,6 +611,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.UPDATED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -1458,6 +1541,9 @@ public class AdvertisementServiceImplTest {
         when(currentUserProvider.getCurrentUser())
                 .thenReturn(seller);
 
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
+
         advertisementService.activate(1L);
 
         assertEquals(
@@ -1471,6 +1557,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.ACTIVATED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -1609,6 +1721,9 @@ public class AdvertisementServiceImplTest {
         when(currentUserProvider.getCurrentUser())
                 .thenReturn(seller);
 
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
+
         advertisementService.deactivate(1L);
 
         assertEquals(
@@ -1622,6 +1737,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.DEACTIVATED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -1730,6 +1871,9 @@ public class AdvertisementServiceImplTest {
         when(advertisementRepository.findById(1L))
                 .thenReturn(Optional.of(advertisement));
 
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
+
         advertisementService.block(1L);
 
         assertEquals(
@@ -1743,6 +1887,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.BLOCKED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -1762,6 +1932,9 @@ public class AdvertisementServiceImplTest {
         when(advertisementRepository.findById(1L))
                 .thenReturn(Optional.of(advertisement));
 
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
+
         advertisementService.block(1L);
 
         assertEquals(
@@ -1775,6 +1948,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.BLOCKED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -1875,6 +2074,9 @@ public class AdvertisementServiceImplTest {
         when(advertisementRepository.findById(1L))
                 .thenReturn(Optional.of(advertisement));
 
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
+
         advertisementService.unblock(1L);
 
         assertEquals(
@@ -1888,6 +2090,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.UNBLOCKED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -1982,6 +2210,9 @@ public class AdvertisementServiceImplTest {
         when(currentUserProvider.getCurrentUser())
                 .thenReturn(seller);
 
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
+
         advertisementService.delete(1L);
 
         assertEquals(
@@ -1995,6 +2226,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.DELETED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -2014,6 +2271,9 @@ public class AdvertisementServiceImplTest {
         when(currentUserProvider.getCurrentUser())
                 .thenReturn(seller);
 
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
+
         advertisementService.delete(1L);
 
         assertEquals(
@@ -2027,6 +2287,32 @@ public class AdvertisementServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService).saveAdvertisementEvent(eventCaptor.capture());
+
+        AdvertisementLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.DELETED,
+                event.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test

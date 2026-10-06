@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.feature.advertisement.controller;
 
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -64,6 +65,7 @@ public class AdminAdvertisementController {
 
     @GetMapping("/search")
     public PageResponse<AdvertisementResponse> search(
+            @Valid
             AdvertisementFilter filter,
             @RequestParam(defaultValue = "0")
             @Min(0)
