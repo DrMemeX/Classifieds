@@ -43,3 +43,7 @@ databaseChangeLog:
   - include:
       file: changes/011-encrypt-messages.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: changes/012-insert-demo-data.yaml
+      relativeToChangelogFile: true

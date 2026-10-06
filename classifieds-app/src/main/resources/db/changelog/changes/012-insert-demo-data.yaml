@@ -1,0 +1,10 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 040-insert-demo-data
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/040-insert-demo-data.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8

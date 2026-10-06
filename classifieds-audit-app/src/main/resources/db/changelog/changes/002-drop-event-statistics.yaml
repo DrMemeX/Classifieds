@@ -1,0 +1,10 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 004-drop-event-statistics
+      author: DrMemeX
+      changes:
+        - sqlFile:
+            path: ../sql/004-drop-event-statistics.sql
+            relativeToChangelogFile: true
+            encoding: UTF-8

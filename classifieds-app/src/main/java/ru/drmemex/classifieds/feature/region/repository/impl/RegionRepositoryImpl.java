@@ -32,7 +32,6 @@ public class RegionRepositoryImpl implements RegionRepository {
     }
 
 
-//    ПРОВЕРИТЬ
     @Override
     public List<Region> findByName(String name) {
         return entityManager.createNativeQuery(

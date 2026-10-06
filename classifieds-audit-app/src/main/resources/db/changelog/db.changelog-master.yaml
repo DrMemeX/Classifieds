@@ -3,3 +3,7 @@ databaseChangeLog:
   - include:
       file: changes/001-kafka-audit-tables.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: changes/002-drop-event-statistics.yaml
+      relativeToChangelogFile: true
