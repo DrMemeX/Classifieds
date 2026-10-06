@@ -1,6 +1,5 @@
 package ru.drmemex.classifieds.feature.advertisement.entity;
 
-import jakarta.persistence.Cache;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -59,7 +58,7 @@ public class Advertisement {
     @Column(nullable = false, length = 1500)
     private String description;
 
-    @Column(nullable = false,precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)

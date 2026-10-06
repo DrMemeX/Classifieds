@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.feature.advertisement.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.drmemex.classifieds.common.util.pagination.dto.PageRequest;
@@ -33,6 +34,7 @@ import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdvertisementServiceImpl implements AdvertisementService {
@@ -75,6 +77,12 @@ public class AdvertisementServiceImpl implements AdvertisementService {
                 );
 
         if (recentAdvertisements >= ADVERTISEMENT_RATE_LIMIT) {
+
+            log.warn(
+                    "Advertisement rate limit exceeded: userId={}",
+                    seller.getId()
+            );
+
             throw new AdvertisementRateLimitExceededException();
         }
 
@@ -86,9 +94,16 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisement.setAdvertisementStatus(AdvertisementStatus.ACTIVE);
         advertisement.setCreatedAt(OffsetDateTime.now());
 
-        return advertisementMapper.toResponse(
-                advertisementRepository.save(advertisement)
+        Advertisement savedAdvertisement =
+                advertisementRepository.save(advertisement);
+
+        log.info(
+                "Advertisement created: advertisementId={}, sellerId={}",
+                savedAdvertisement.getId(),
+                seller.getId()
         );
+
+        return advertisementMapper.toResponse(savedAdvertisement);
     }
 
     @Override
@@ -149,9 +164,15 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
-        return advertisementMapper.toResponse(
-                advertisementRepository.update(advertisement)
+        Advertisement updatedAdvertisement =
+                advertisementRepository.update(advertisement);
+
+        log.info(
+                "Advertisement updated: advertisementId={}",
+                advertisementId
         );
+
+        return advertisementMapper.toResponse(updatedAdvertisement);
     }
 
     @Override
@@ -292,6 +313,11 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
         advertisementRepository.update(advertisement);
+
+        log.info(
+                "Advertisement activated: advertisementId={}",
+                advertisementId
+        );
     }
 
     @Override
@@ -313,6 +339,11 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
         advertisementRepository.update(advertisement);
+
+        log.info(
+                "Advertisement deactivated: advertisementId={}",
+                advertisementId
+        );
     }
 
     @Override
@@ -342,6 +373,11 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
         advertisementRepository.update(advertisement);
+
+        log.info(
+                "Advertisement blocked: advertisementId={}",
+                advertisementId
+        );
     }
 
     @Override
@@ -369,6 +405,11 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
         advertisementRepository.update(advertisement);
+
+        log.info(
+                "Advertisement unblocked: advertisementId={}",
+                advertisementId
+        );
     }
 
     @Override
@@ -392,6 +433,11 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisement.setUpdatedAt(OffsetDateTime.now());
 
         advertisementRepository.update(advertisement);
+
+        log.info(
+                "Advertisement deleted: advertisementId={}",
+                advertisementId
+        );
     }
 
     @Override

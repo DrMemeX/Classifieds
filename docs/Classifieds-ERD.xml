@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0">
   <diagram id="rYYN00NBpah7oeCfTWv4" name="classifieds">
-    <mxGraphModel dx="2266" dy="1072" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1133" dy="536" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -162,7 +162,7 @@
             <mxRectangle height="20" width="42.98044720818052" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="tNMFFH3lsM54_QPwlJkT-35" parent="tNMFFH3lsM54_QPwlJkT-33" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;whiteSpace=wrap;html=1;" value="phone : varchar(20) NOT NULL UNIQUE" vertex="1">
+        <mxCell id="tNMFFH3lsM54_QPwlJkT-35" parent="tNMFFH3lsM54_QPwlJkT-33" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;whiteSpace=wrap;html=1;" value="phone : varchar(20) NULL UNIQUE" vertex="1">
           <mxGeometry height="20" width="271.07105000813795" x="42.98044720818052" as="geometry">
             <mxRectangle height="20" width="271.07105000813795" as="alternateBounds" />
           </mxGeometry>

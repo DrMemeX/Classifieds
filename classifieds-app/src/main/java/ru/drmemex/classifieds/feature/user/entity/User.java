@@ -18,7 +18,6 @@ import lombok.Setter;
 import ru.drmemex.classifieds.feature.user.model.UserRole;
 import ru.drmemex.classifieds.feature.user.model.UserStatus;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -62,5 +61,4 @@ public class User {
 
     @Column(name = "blocked_at")
     private OffsetDateTime blockedAt;
-
 }

@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.common.exception.handler;
 
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -20,6 +21,7 @@ import ru.drmemex.classifieds.common.exception.response.ErrorResponse;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -72,7 +74,6 @@ public class GlobalExceptionHandler {
                 message
         );
     }
-
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
@@ -175,9 +176,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(
             Exception exception
     ) {
+
+        log.error(
+                "Unhandled exception",
+                exception
+        );
+
         return buildErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                exception.getMessage()
+                "Internal server error"
         );
     }
 
@@ -185,6 +192,16 @@ public class GlobalExceptionHandler {
             HttpStatus status,
             String message
     ) {
+
+        if (!status.is5xxServerError()) {
+            log.warn(
+                    "Request failed with status {} {}: {}",
+                    status.value(),
+                    status.getReasonPhrase(),
+                    message
+            );
+        }
+
         ErrorResponse response = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public record AdvertisementImageRequest(
 
-        @NotBlank
+        @NotBlank(message = "Object key cannot be blank")
         String objectKey
 ) {
 }

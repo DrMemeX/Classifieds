@@ -1,6 +1,7 @@
 package ru.drmemex.classifieds.feature.user.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import ru.drmemex.classifieds.feature.user.entity.User;
 import ru.drmemex.classifieds.feature.user.entity.UserProfile;
 import ru.drmemex.classifieds.feature.user.exception.AdminCannotBlockSelfException;
 import ru.drmemex.classifieds.feature.user.exception.DeletedUserCannotBeActivatedException;
+import ru.drmemex.classifieds.feature.user.exception.DeletedUserCannotBeBlockedException;
 import ru.drmemex.classifieds.feature.user.exception.EmptyProfileUpdateException;
 import ru.drmemex.classifieds.feature.user.exception.LoginAlreadyExistsException;
 import ru.drmemex.classifieds.feature.user.exception.PhoneAlreadyExistsException;
@@ -44,22 +46,17 @@ import java.util.UUID;
 
 import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.buildPageResponse;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-
     private final UserProfileRepository userProfileRepository;
-
     private final AdvertisementRepository advertisementRepository;
-
     private final PasswordEncoder passwordEncoder;
-
     private final JwtService jwtService;
-
     private final UserMapper userMapper;
-
     private final CurrentUserProvider currentUserProvider;
 
 
@@ -72,6 +69,11 @@ public class UserServiceImpl implements UserService {
                 UserRole.USER
         );
 
+        log.info(
+                "User registered: userId={}",
+                user.getId()
+        );
+
         return userMapper.toRegisterUserResponse(user);
     }
 
@@ -82,6 +84,11 @@ public class UserServiceImpl implements UserService {
         User user = createUser(
                 request,
                 UserRole.ADMIN
+        );
+
+        log.info(
+                "Admin registered: userId={}",
+                user.getId()
         );
 
         return userMapper.toRegisterUserResponse(user);
@@ -105,6 +112,11 @@ public class UserServiceImpl implements UserService {
 
         String accessToken = jwtService.generateAccessToken(user);
 
+        log.info(
+                "User logged in: userId={}",
+                user.getId()
+        );
+
         return userMapper.toLoginUserResponse(
                 user,
                 user.getProfile(),
@@ -126,6 +138,11 @@ public class UserServiceImpl implements UserService {
         user.setUpdatedAt(OffsetDateTime.now());
 
         userRepository.update(user);
+
+        log.info(
+                "User login changed: userId={}",
+                user.getId()
+        );
     }
 
     @Override
@@ -148,6 +165,11 @@ public class UserServiceImpl implements UserService {
         user.setUpdatedAt(OffsetDateTime.now());
 
         userRepository.update(user);
+
+        log.info(
+                "User password changed: userId={}",
+                user.getId()
+        );
     }
 
     @Override
@@ -198,6 +220,11 @@ public class UserServiceImpl implements UserService {
 
         userProfileRepository.update(profile);
         userRepository.update(user);
+
+        log.info(
+                "User profile updated: userId={}",
+                user.getId()
+        );
     }
 
     @Override
@@ -205,16 +232,26 @@ public class UserServiceImpl implements UserService {
     public void deleteAccount() {
 
         User user = currentUserProvider.getCurrentUser();
+        UserProfile profile = user.getProfile();
 
         user.setStatus(UserStatus.DELETED);
         user.setLogin("deleted_" + user.getId());
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setUpdatedAt(OffsetDateTime.now());
 
-        user.setProfile(null);
+        profile.setFirstName("Удалённый");
+        profile.setLastName("пользователь");
+        profile.setPhone(null);
 
+        userProfileRepository.update(profile);
         userRepository.update(user);
 
         deactivateActiveAdvertisements(user.getId());
+
+        log.info(
+                "User account deleted: userId={}",
+                user.getId()
+        );
     }
 
     @Override
@@ -278,6 +315,10 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
+        if (user.getStatus() == UserStatus.DELETED) {
+            throw new DeletedUserCannotBeBlockedException(id);
+        }
+
         if (user.getStatus() == UserStatus.BLOCKED) {
             throw new UserAlreadyBlockedException(id);
         }
@@ -288,6 +329,11 @@ public class UserServiceImpl implements UserService {
         userRepository.update(user);
 
         deactivateActiveAdvertisements(id);
+
+        log.info(
+                "User blocked: userId={}",
+                user.getId()
+        );
     }
 
     @Override
@@ -309,6 +355,11 @@ public class UserServiceImpl implements UserService {
         user.setBlockedAt(null);
 
         userRepository.update(user);
+
+        log.info(
+                "User unblocked: userId={}",
+                user.getId()
+        );
     }
 
     private User createUser(
