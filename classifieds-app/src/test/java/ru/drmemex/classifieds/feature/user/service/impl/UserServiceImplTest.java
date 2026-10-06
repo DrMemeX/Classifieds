@@ -2,6 +2,7 @@ package ru.drmemex.classifieds.feature.user.service.impl;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -39,6 +40,11 @@ import ru.drmemex.classifieds.feature.user.model.UserRole;
 import ru.drmemex.classifieds.feature.user.model.UserStatus;
 import ru.drmemex.classifieds.feature.user.repository.UserProfileRepository;
 import ru.drmemex.classifieds.feature.user.repository.UserRepository;
+import ru.drmemex.classifieds.kafka.event.AdvertisementLifecycleEvent;
+import ru.drmemex.classifieds.kafka.event.UserLifecycleEvent;
+import ru.drmemex.classifieds.kafka.event.model.AdvertisementEventType;
+import ru.drmemex.classifieds.kafka.event.model.UserEventType;
+import ru.drmemex.classifieds.kafka.outbox.service.OutboxService;
 import ru.drmemex.classifieds.security.exception.InvalidCredentialsException;
 import ru.drmemex.classifieds.security.jwt.service.JwtService;
 import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
@@ -83,6 +89,9 @@ class UserServiceImplTest {
     @Mock
     private CurrentUserProvider currentUserProvider;
 
+    @Mock
+    private OutboxService outboxService;
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -99,6 +108,8 @@ class UserServiceImplTest {
                 );
 
         User user = new User();
+        user.setId(1L);
+
         UserProfile profile = new UserProfile();
 
         RegisterUserResponse expectedResponse =
@@ -156,6 +167,32 @@ class UserServiceImplTest {
 
         verify(userRepository)
                 .save(user);
+
+        ArgumentCaptor<UserLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(UserLifecycleEvent.class);
+
+        verify(outboxService).saveUserEvent(eventCaptor.capture());
+
+        UserLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                event.userId()
+        );
+
+        assertEquals(
+                UserEventType.CREATED,
+                event.eventType()
+        );
+
+        assertEquals(
+                user.getCreatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -234,6 +271,8 @@ class UserServiceImplTest {
                 );
 
         User user = new User();
+        user.setId(2L);
+
         UserProfile profile = new UserProfile();
 
         RegisterUserResponse expectedResponse =
@@ -291,6 +330,32 @@ class UserServiceImplTest {
 
         verify(userRepository)
                 .save(user);
+
+        ArgumentCaptor<UserLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(UserLifecycleEvent.class);
+
+        verify(outboxService).saveUserEvent(eventCaptor.capture());
+
+        UserLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                2L,
+                event.userId()
+        );
+
+        assertEquals(
+                UserEventType.CREATED,
+                event.eventType()
+        );
+
+        assertEquals(
+                user.getCreatedAt(),
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test
@@ -838,6 +903,7 @@ class UserServiceImplTest {
         user.setProfile(profile);
 
         Advertisement advertisement = new Advertisement();
+        advertisement.setId(10L);
         advertisement.setAdvertisementStatus(AdvertisementStatus.ACTIVE);
 
         when(currentUserProvider.getCurrentUser())
@@ -850,6 +916,9 @@ class UserServiceImplTest {
                 1L,
                 AdvertisementStatus.ACTIVE
         )).thenReturn(List.of(advertisement));
+
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
 
         userService.deleteAccount();
 
@@ -910,6 +979,59 @@ class UserServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<UserLifecycleEvent> userEventCaptor =
+                ArgumentCaptor.forClass(UserLifecycleEvent.class);
+
+        verify(outboxService).saveUserEvent(userEventCaptor.capture());
+
+        UserLifecycleEvent userEvent = userEventCaptor.getValue();
+
+        assertEquals(
+                1L,
+                userEvent.userId()
+        );
+
+        assertEquals(
+                UserEventType.DELETED,
+                userEvent.eventType()
+        );
+
+        assertEquals(
+                user.getUpdatedAt(),
+                userEvent.occurredAt()
+        );
+
+        assertNotNull(
+                userEvent.eventId()
+        );
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> advertisementEventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService)
+                .saveAdvertisementEvent(advertisementEventCaptor.capture());
+
+        AdvertisementLifecycleEvent advertisementEvent = advertisementEventCaptor.getValue();
+
+        assertEquals(
+                10L,
+                advertisementEvent.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.DEACTIVATED,
+                advertisementEvent.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                advertisementEvent.occurredAt()
+        );
+
+        assertNotNull(
+                advertisementEvent.eventId()
+        );
     }
 
     @Test
@@ -1106,6 +1228,7 @@ class UserServiceImplTest {
         user.setStatus(UserStatus.ACTIVE);
 
         Advertisement advertisement = new Advertisement();
+        advertisement.setId(10L);
         advertisement.setAdvertisementStatus(AdvertisementStatus.ACTIVE);
 
         when(currentUserProvider.getCurrentUser())
@@ -1118,6 +1241,9 @@ class UserServiceImplTest {
                 2L,
                 AdvertisementStatus.ACTIVE
         )).thenReturn(List.of(advertisement));
+
+        when(advertisementRepository.update(advertisement))
+                .thenReturn(advertisement);
 
         userService.blockUser(2L);
 
@@ -1150,6 +1276,59 @@ class UserServiceImplTest {
 
         verify(advertisementRepository)
                 .update(advertisement);
+
+        ArgumentCaptor<UserLifecycleEvent> userEventCaptor =
+                ArgumentCaptor.forClass(UserLifecycleEvent.class);
+
+        verify(outboxService).saveUserEvent(userEventCaptor.capture());
+
+        UserLifecycleEvent userEvent = userEventCaptor.getValue();
+
+        assertEquals(
+                2L,
+                userEvent.userId()
+        );
+
+        assertEquals(
+                UserEventType.BLOCKED,
+                userEvent.eventType()
+        );
+
+        assertEquals(
+                user.getBlockedAt(),
+                userEvent.occurredAt()
+        );
+
+        assertNotNull(
+                userEvent.eventId()
+        );
+
+        ArgumentCaptor<AdvertisementLifecycleEvent> advertisementEventCaptor =
+                ArgumentCaptor.forClass(AdvertisementLifecycleEvent.class);
+
+        verify(outboxService)
+                .saveAdvertisementEvent(advertisementEventCaptor.capture());
+
+        AdvertisementLifecycleEvent advertisementEvent = advertisementEventCaptor.getValue();
+
+        assertEquals(
+                10L,
+                advertisementEvent.advertisementId()
+        );
+
+        assertEquals(
+                AdvertisementEventType.DEACTIVATED,
+                advertisementEvent.eventType()
+        );
+
+        assertEquals(
+                advertisement.getUpdatedAt(),
+                advertisementEvent.occurredAt()
+        );
+
+        assertNotNull(
+                advertisementEvent.eventId()
+        );
     }
 
     @Test
@@ -1305,6 +1484,7 @@ class UserServiceImplTest {
         currentUser.setRole(UserRole.ADMIN);
 
         User user = new User();
+        user.setId(2L);
         user.setRole(UserRole.USER);
         user.setStatus(UserStatus.BLOCKED);
         user.setBlockedAt(OffsetDateTime.now());
@@ -1328,6 +1508,31 @@ class UserServiceImplTest {
 
         verify(userRepository)
                 .update(user);
+
+        ArgumentCaptor<UserLifecycleEvent> eventCaptor =
+                ArgumentCaptor.forClass(UserLifecycleEvent.class);
+
+        verify(outboxService).saveUserEvent(eventCaptor.capture());
+
+        UserLifecycleEvent event = eventCaptor.getValue();
+
+        assertEquals(
+                2L,
+                event.userId()
+        );
+
+        assertEquals(
+                UserEventType.UNBLOCKED,
+                event.eventType()
+        );
+
+        assertNotNull(
+                event.occurredAt()
+        );
+
+        assertNotNull(
+                event.eventId()
+        );
     }
 
     @Test

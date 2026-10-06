@@ -13,6 +13,8 @@ import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
 import ru.drmemex.classifieds.feature.conversation.entity.Conversation;
 import ru.drmemex.classifieds.feature.conversation.message.dto.MessageRequest;
 import ru.drmemex.classifieds.feature.conversation.message.dto.MessageResponse;
+import ru.drmemex.classifieds.feature.conversation.message.encryption.EncryptedMessage;
+import ru.drmemex.classifieds.feature.conversation.message.encryption.service.MessageEncryptionService;
 import ru.drmemex.classifieds.feature.conversation.message.entity.Message;
 import ru.drmemex.classifieds.feature.conversation.message.exception.MessageRateLimitExceededException;
 import ru.drmemex.classifieds.feature.conversation.message.exception.MessageSendingNotAllowedException;
@@ -31,13 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MessageServiceImplTest {
+
+    private static final String TEST_IV = "0123456789abcdef";
 
     @Mock
     private CurrentUserProvider currentUserProvider;
@@ -51,28 +56,41 @@ class MessageServiceImplTest {
     @Mock
     private MessageMapper messageMapper;
 
+    @Mock
+    private MessageEncryptionService messageEncryptionService;
+
     @InjectMocks
     private MessageServiceImpl messageService;
 
     @Test
     void send_ShouldSendMessage_WhenRecentMessagesCountIs19() {
 
-        MessageRequest request =
-                new MessageRequest("Здравствуйте");
+        MessageRequest request = new MessageRequest("Здравствуйте");
 
         User currentUser = new User();
         currentUser.setId(1L);
 
         Advertisement advertisement = new Advertisement();
-        advertisement.setAdvertisementStatus(
-                AdvertisementStatus.ACTIVE
-        );
+        advertisement.setAdvertisementStatus(AdvertisementStatus.ACTIVE);
 
         Conversation conversation = new Conversation();
+        conversation.setId(1L);
         conversation.setAdvertisement(advertisement);
 
+        EncryptedMessage encryptedMessage =
+                new EncryptedMessage(
+                        "encrypted-message",
+                        TEST_IV
+                );
+
         MessageResponse expectedResponse =
-                mock(MessageResponse.class);
+                new MessageResponse(
+                        1L,
+                        1L,
+                        1L,
+                        "Здравствуйте",
+                        OffsetDateTime.now()
+                );
 
         when(currentUserProvider.getCurrentUser())
                 .thenReturn(currentUser);
@@ -87,11 +105,25 @@ class MessageServiceImplTest {
                 any(OffsetDateTime.class)
         )).thenReturn(19L);
 
-        when(messageRepository.save(any(Message.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(messageEncryptionService.encrypt(
+                "Здравствуйте",
+                1L
+        )).thenReturn(encryptedMessage);
 
-        when(messageMapper.toResponse(any(Message.class)))
-                .thenReturn(expectedResponse);
+        when(messageRepository.save(any(Message.class)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0));
+
+        when(messageEncryptionService.decrypt(
+                "encrypted-message",
+                TEST_IV,
+                1L
+        )).thenReturn("Здравствуйте");
+
+        when(messageMapper.toResponse(
+                any(Message.class),
+                eq("Здравствуйте")
+        )).thenReturn(expectedResponse);
 
         MessageResponse result =
                 messageService.send(
@@ -124,22 +156,37 @@ class MessageServiceImplTest {
         );
 
         assertEquals(
-                "Здравствуйте",
-                savedMessage.getText()
+                "encrypted-message",
+                savedMessage.getEncryptedText()
+        );
+
+        assertEquals(
+                TEST_IV,
+                savedMessage.getIv()
         );
 
         assertNotNull(
                 savedMessage.getCreatedAt()
         );
 
-        verify(conversationService)
-                .getAccessibleConversation(
-                        1L,
-                        currentUser
+        verify(messageEncryptionService)
+                .encrypt(
+                        "Здравствуйте",
+                        1L
+                );
+
+        verify(messageEncryptionService)
+                .decrypt(
+                        "encrypted-message",
+                        TEST_IV,
+                        1L
                 );
 
         verify(messageMapper)
-                .toResponse(savedMessage);
+                .toResponse(
+                        savedMessage,
+                        "Здравствуйте"
+                );
     }
 
     @Test
@@ -183,8 +230,17 @@ class MessageServiceImplTest {
         verify(messageRepository, never())
                 .save(any(Message.class));
 
+        verify(messageEncryptionService, never())
+                .encrypt(
+                        anyString(),
+                        any()
+                );
+
         verify(messageMapper, never())
-                .toResponse(any(Message.class));
+                .toResponse(
+                        any(Message.class),
+                        anyString()
+                );
     }
 
     @Test
@@ -228,8 +284,17 @@ class MessageServiceImplTest {
         verify(messageRepository, never())
                 .save(any(Message.class));
 
+        verify(messageEncryptionService, never())
+                .encrypt(
+                        anyString(),
+                        any()
+                );
+
         verify(messageMapper, never())
-                .toResponse(any(Message.class));
+                .toResponse(
+                        any(Message.class),
+                        anyString()
+                );
     }
 
     @Test
@@ -238,20 +303,38 @@ class MessageServiceImplTest {
         User currentUser = new User();
         currentUser.setId(1L);
 
+        Conversation conversation = new Conversation();
+        conversation.setId(1L);
+
         PageRequest pageRequest =
                 new PageRequest(
                         1,
                         2
                 );
 
-        Message message1 = new Message();
-        Message message2 = new Message();
+        Message message1 = createMessage(
+                1L,
+                conversation,
+                "encrypted-first"
+        );
+
+        Message message2 = createMessage(
+                2L,
+                conversation,
+                "encrypted-second"
+        );
 
         MessageResponse response1 =
-                mock(MessageResponse.class);
+                createResponse(
+                        1L,
+                        "First message"
+                );
 
         MessageResponse response2 =
-                mock(MessageResponse.class);
+                createResponse(
+                        2L,
+                        "Second message"
+                );
 
         when(currentUserProvider.getCurrentUser())
                 .thenReturn(currentUser);
@@ -264,11 +347,27 @@ class MessageServiceImplTest {
                 message2
         ));
 
-        when(messageMapper.toResponse(message1))
-                .thenReturn(response1);
+        when(messageEncryptionService.decrypt(
+                "encrypted-first",
+                TEST_IV,
+                1L
+        )).thenReturn("First message");
 
-        when(messageMapper.toResponse(message2))
-                .thenReturn(response2);
+        when(messageEncryptionService.decrypt(
+                "encrypted-second",
+                TEST_IV,
+                1L
+        )).thenReturn("Second message");
+
+        when(messageMapper.toResponse(
+                message1,
+                "First message"
+        )).thenReturn(response1);
+
+        when(messageMapper.toResponse(
+                message2,
+                "Second message"
+        )).thenReturn(response2);
 
         when(messageRepository.countByConversationId(1L))
                 .thenReturn(5L);
@@ -317,20 +416,29 @@ class MessageServiceImplTest {
                 );
 
         verify(messageMapper)
-                .toResponse(message1);
+                .toResponse(
+                        message1,
+                        "First message"
+                );
 
         verify(messageMapper)
-                .toResponse(message2);
+                .toResponse(
+                        message2,
+                        "Second message"
+                );
 
         verify(messageRepository)
                 .countByConversationId(1L);
     }
 
     @Test
-    void searchByConversationAndText_ShouldReturnPageOfMessages() {
+    void searchByConversationAndText_ShouldReturnFilteredAndPaginatedMessages() {
 
         User currentUser = new User();
         currentUser.setId(1L);
+
+        Conversation conversation = new Conversation();
+        conversation.setId(1L);
 
         PageRequest pageRequest =
                 new PageRequest(
@@ -338,37 +446,126 @@ class MessageServiceImplTest {
                         2
                 );
 
-        Message message1 = new Message();
-        Message message2 = new Message();
+        Message message1 = createMessage(
+                1L,
+                conversation,
+                "encrypted-1"
+        );
+
+        Message message2 = createMessage(
+                2L,
+                conversation,
+                "encrypted-2"
+        );
+
+        Message message3 = createMessage(
+                3L,
+                conversation,
+                "encrypted-3"
+        );
+
+        Message message4 = createMessage(
+                4L,
+                conversation,
+                "encrypted-4"
+        );
+
+        Message message5 = createMessage(
+                5L,
+                conversation,
+                "encrypted-5"
+        );
+
+        Message message6 = createMessage(
+                6L,
+                conversation,
+                "encrypted-6"
+        );
 
         MessageResponse response1 =
-                mock(MessageResponse.class);
+                createResponse(
+                        1L,
+                        "Привет один"
+                );
 
         MessageResponse response2 =
-                mock(MessageResponse.class);
+                createResponse(
+                        2L,
+                        "Сообщение без совпадения"
+                );
+
+        MessageResponse response3 =
+                createResponse(
+                        3L,
+                        "ПРИВЕТ два"
+                );
+
+        MessageResponse response4 =
+                createResponse(
+                        4L,
+                        "Это привет три"
+                );
+
+        MessageResponse response5 =
+                createResponse(
+                        5L,
+                        "ПрИвЕт четыре"
+                );
+
+        MessageResponse response6 =
+                createResponse(
+                        6L,
+                        "привет пять"
+                );
 
         when(currentUserProvider.getCurrentUser())
                 .thenReturn(currentUser);
 
-        when(messageRepository.searchByConversationIdAndText(
-                1L,
-                "привет",
-                pageRequest
-        )).thenReturn(List.of(
+        when(messageRepository.findAllByConversationId(1L))
+                .thenReturn(List.of(
+                        message1,
+                        message2,
+                        message3,
+                        message4,
+                        message5,
+                        message6
+                ));
+
+        mockDecryption(
                 message1,
-                message2
-        ));
+                "Привет один",
+                response1
+        );
 
-        when(messageMapper.toResponse(message1))
-                .thenReturn(response1);
+        mockDecryption(
+                message2,
+                "Сообщение без совпадения",
+                response2
+        );
 
-        when(messageMapper.toResponse(message2))
-                .thenReturn(response2);
+        mockDecryption(
+                message3,
+                "ПРИВЕТ два",
+                response3
+        );
 
-        when(messageRepository.countByConversationIdAndText(
-                1L,
-                "привет"
-        )).thenReturn(5L);
+        mockDecryption(
+                message4,
+                "Это привет три",
+                response4
+        );
+
+        mockDecryption(
+                message5,
+                "ПрИвЕт четыре",
+                response5
+        );
+
+        mockDecryption(
+                message6,
+                "привет пять",
+                response6
+        );
 
         PageResponse<MessageResponse> result =
                 messageService.searchByConversationAndText(
@@ -378,7 +575,10 @@ class MessageServiceImplTest {
                 );
 
         assertEquals(
-                List.of(response1, response2),
+                List.of(
+                        response4,
+                        response5
+                ),
                 result.content()
         );
 
@@ -409,22 +609,56 @@ class MessageServiceImplTest {
                 );
 
         verify(messageRepository)
-                .searchByConversationIdAndText(
-                        1L,
-                        "привет",
-                        pageRequest
-                );
+                .findAllByConversationId(1L);
+    }
 
-        verify(messageMapper)
-                .toResponse(message1);
+    private Message createMessage(
+            Long id,
+            Conversation conversation,
+            String encryptedText
+    ) {
 
-        verify(messageMapper)
-                .toResponse(message2);
+        Message message = new Message();
 
-        verify(messageRepository)
-                .countByConversationIdAndText(
-                        1L,
-                        "привет"
-                );
+        message.setId(id);
+        message.setConversation(conversation);
+        message.setEncryptedText(encryptedText);
+        message.setIv(TEST_IV);
+
+        return message;
+    }
+
+    private MessageResponse createResponse(
+            Long id,
+            String text
+    ) {
+
+        return new MessageResponse(
+                id,
+                1L,
+                1L,
+                text,
+                OffsetDateTime.parse(
+                        "2026-09-25T10:00:00Z"
+                )
+        );
+    }
+
+    private void mockDecryption(
+            Message message,
+            String text,
+            MessageResponse response
+    ) {
+
+        when(messageEncryptionService.decrypt(
+                message.getEncryptedText(),
+                TEST_IV,
+                1L
+        )).thenReturn(text);
+
+        when(messageMapper.toResponse(
+                message,
+                text
+        )).thenReturn(response);
     }
 }

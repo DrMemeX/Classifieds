@@ -39,6 +39,11 @@ import ru.drmemex.classifieds.feature.user.model.UserStatus;
 import ru.drmemex.classifieds.feature.user.repository.UserProfileRepository;
 import ru.drmemex.classifieds.feature.user.repository.UserRepository;
 import ru.drmemex.classifieds.feature.user.service.UserService;
+import ru.drmemex.classifieds.kafka.event.AdvertisementLifecycleEvent;
+import ru.drmemex.classifieds.kafka.event.UserLifecycleEvent;
+import ru.drmemex.classifieds.kafka.event.model.AdvertisementEventType;
+import ru.drmemex.classifieds.kafka.event.model.UserEventType;
+import ru.drmemex.classifieds.kafka.outbox.service.OutboxService;
 import ru.drmemex.classifieds.security.exception.InvalidCredentialsException;
 import ru.drmemex.classifieds.security.jwt.service.JwtService;
 import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
@@ -62,6 +67,8 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final CurrentUserProvider currentUserProvider;
 
+    private final OutboxService outboxService;
+
 
     @Override
     @Transactional
@@ -71,6 +78,16 @@ public class UserServiceImpl implements UserService {
                 request,
                 UserRole.USER
         );
+
+        UserLifecycleEvent event =
+                new UserLifecycleEvent(
+                        UUID.randomUUID(),
+                        user.getId(),
+                        UserEventType.CREATED,
+                        user.getCreatedAt()
+                );
+
+        outboxService.saveUserEvent(event);
 
         log.info(
                 "User registered: userId={}",
@@ -88,6 +105,16 @@ public class UserServiceImpl implements UserService {
                 request,
                 UserRole.ADMIN
         );
+
+        UserLifecycleEvent event =
+                new UserLifecycleEvent(
+                        UUID.randomUUID(),
+                        user.getId(),
+                        UserEventType.CREATED,
+                        user.getCreatedAt()
+                );
+
+        outboxService.saveUserEvent(event);
 
         log.info(
                 "Admin registered: userId={}",
@@ -254,6 +281,16 @@ public class UserServiceImpl implements UserService {
         userProfileRepository.update(profile);
         userRepository.update(user);
 
+        UserLifecycleEvent event =
+                new UserLifecycleEvent(
+                        UUID.randomUUID(),
+                        user.getId(),
+                        UserEventType.DELETED,
+                        user.getUpdatedAt()
+                );
+
+        outboxService.saveUserEvent(event);
+
         deactivateActiveAdvertisements(user.getId());
 
         log.info(
@@ -340,6 +377,16 @@ public class UserServiceImpl implements UserService {
 
         userRepository.update(user);
 
+        UserLifecycleEvent event =
+                new UserLifecycleEvent(
+                        UUID.randomUUID(),
+                        user.getId(),
+                        UserEventType.BLOCKED,
+                        user.getBlockedAt()
+                );
+
+        outboxService.saveUserEvent(event);
+
         deactivateActiveAdvertisements(id);
 
         log.info(
@@ -373,6 +420,16 @@ public class UserServiceImpl implements UserService {
         user.setBlockedAt(null);
 
         userRepository.update(user);
+
+        UserLifecycleEvent event =
+                new UserLifecycleEvent(
+                        UUID.randomUUID(),
+                        user.getId(),
+                        UserEventType.UNBLOCKED,
+                        OffsetDateTime.now()
+                );
+
+        outboxService.saveUserEvent(event);
 
         log.info(
                 "User unblocked: userId={}",
@@ -428,7 +485,17 @@ public class UserServiceImpl implements UserService {
             advertisement.setAdvertisementStatus(AdvertisementStatus.INACTIVE);
             advertisement.setUpdatedAt(OffsetDateTime.now());
 
-            advertisementRepository.update(advertisement);
+            Advertisement updatedAdvertisement = advertisementRepository.update(advertisement);
+
+            AdvertisementLifecycleEvent event =
+                    new AdvertisementLifecycleEvent(
+                            UUID.randomUUID(),
+                            updatedAdvertisement.getId(),
+                            AdvertisementEventType.DEACTIVATED,
+                            updatedAdvertisement.getUpdatedAt()
+                    );
+
+            outboxService.saveAdvertisementEvent(event);
         }
     }
 }

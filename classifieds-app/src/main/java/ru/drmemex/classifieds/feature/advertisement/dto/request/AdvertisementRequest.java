@@ -20,6 +20,7 @@ public record AdvertisementRequest(
 
         @NotBlank(message = "Locality cannot be blank")
         @Size(
+                min = 2,
                 max = 100,
                 message = "Locality cannot exceed 100 characters"
         )

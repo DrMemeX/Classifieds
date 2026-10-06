@@ -30,6 +30,7 @@ public class MessageRepositoryImpl implements MessageRepository {
             Long conversationId,
             PageRequest pageRequest
     ) {
+
         TypedQuery<Message> query = entityManager.createQuery(
                 """
                         SELECT m
@@ -40,47 +41,10 @@ public class MessageRepositoryImpl implements MessageRepository {
                 Message.class
         );
 
-        query.setParameter("conversationId", conversationId);
-
-        applyPagination(query, pageRequest);
-
-        return query.getResultList();
-    }
-
-    @Override
-    public long countByConversationId(Long conversationId) {
-        return entityManager.createQuery(
-                        """
-                                SELECT COUNT(m)
-                                FROM Message m
-                                WHERE m.conversation.id = :conversationId
-                                """,
-                        Long.class
-                )
-                .setParameter("conversationId", conversationId)
-                .getSingleResult();
-    }
-
-    @Override
-    public List<Message> searchByConversationIdAndText(
-            Long conversationId,
-            String text,
-            PageRequest pageRequest
-    ) {
-        TypedQuery<Message> query = entityManager.createQuery(
-                """
-                        SELECT m
-                        FROM Message m
-                        WHERE m.conversation.id = :conversationId
-                        AND LOWER(m.text) LIKE LOWER(:text)
-                        ORDER BY m.createdAt ASC, m.id ASC
-                        """,
-                Message.class
+        query.setParameter(
+                "conversationId",
+                conversationId
         );
-
-        query.setParameter("conversationId", conversationId);
-
-        query.setParameter("text", "%" + text + "%");
 
         applyPagination(
                 query,
@@ -91,21 +55,43 @@ public class MessageRepositoryImpl implements MessageRepository {
     }
 
     @Override
-    public long countByConversationIdAndText(
-            Long conversationId,
-            String text
+    public List<Message> findAllByConversationId(
+            Long conversationId
     ) {
+
+        return entityManager.createQuery(
+                        """
+                                SELECT m
+                                FROM Message m
+                                WHERE m.conversation.id = :conversationId
+                                ORDER BY m.createdAt ASC, m.id ASC
+                                """,
+                        Message.class
+                )
+                .setParameter(
+                        "conversationId",
+                        conversationId
+                )
+                .getResultList();
+    }
+
+    @Override
+    public long countByConversationId(
+            Long conversationId
+    ) {
+
         return entityManager.createQuery(
                         """
                                 SELECT COUNT(m)
                                 FROM Message m
                                 WHERE m.conversation.id = :conversationId
-                                AND LOWER(m.text) LIKE LOWER(:text)
                                 """,
                         Long.class
                 )
-                .setParameter("conversationId", conversationId)
-                .setParameter("text", "%" + text + "%")
+                .setParameter(
+                        "conversationId",
+                        conversationId
+                )
                 .getSingleResult();
     }
 
@@ -114,6 +100,7 @@ public class MessageRepositoryImpl implements MessageRepository {
             Long authorId,
             OffsetDateTime createdAfter
     ) {
+
         return entityManager.createQuery(
                         """
                                 SELECT COUNT(m)
@@ -123,8 +110,14 @@ public class MessageRepositoryImpl implements MessageRepository {
                                 """,
                         Long.class
                 )
-                .setParameter("authorId", authorId)
-                .setParameter("createdAfter", createdAfter)
+                .setParameter(
+                        "authorId",
+                        authorId
+                )
+                .setParameter(
+                        "createdAfter",
+                        createdAfter
+                )
                 .getSingleResult();
     }
 }

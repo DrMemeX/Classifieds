@@ -10,6 +10,8 @@ import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
 import ru.drmemex.classifieds.feature.conversation.entity.Conversation;
 import ru.drmemex.classifieds.feature.conversation.message.dto.MessageRequest;
 import ru.drmemex.classifieds.feature.conversation.message.dto.MessageResponse;
+import ru.drmemex.classifieds.feature.conversation.message.encryption.EncryptedMessage;
+import ru.drmemex.classifieds.feature.conversation.message.encryption.service.MessageEncryptionService;
 import ru.drmemex.classifieds.feature.conversation.message.entity.Message;
 import ru.drmemex.classifieds.feature.conversation.message.exception.MessageRateLimitExceededException;
 import ru.drmemex.classifieds.feature.conversation.message.exception.MessageSendingNotAllowedException;
@@ -22,6 +24,7 @@ import ru.drmemex.classifieds.security.provider.CurrentUserProvider;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 
 import static ru.drmemex.classifieds.common.util.pagination.PaginationUtils.buildPageResponse;
 
@@ -37,7 +40,7 @@ public class MessageServiceImpl implements MessageService {
     private final ConversationService conversationService;
     private final MessageRepository messageRepository;
     private final MessageMapper messageMapper;
-
+    private final MessageEncryptionService messageEncryptionService;
 
     @Override
     @Transactional
@@ -46,15 +49,20 @@ public class MessageServiceImpl implements MessageService {
             MessageRequest request
     ) {
 
-        User currentUser = currentUserProvider.getCurrentUser();
+        User currentUser =
+                currentUserProvider.getCurrentUser();
 
-        Conversation conversation = conversationService.getAccessibleConversation(
-                conversationId,
-                currentUser
-        );
+        Conversation conversation =
+                conversationService.getAccessibleConversation(
+                        conversationId,
+                        currentUser
+                );
 
-        if (conversation.getAdvertisement().getAdvertisementStatus()
+        if (conversation
+                .getAdvertisement()
+                .getAdvertisementStatus()
                 != AdvertisementStatus.ACTIVE) {
+
             throw new MessageSendingNotAllowedException(
                     conversationId
             );
@@ -65,11 +73,12 @@ public class MessageServiceImpl implements MessageService {
                         MESSAGE_RATE_LIMIT_WINDOW_MINUTES
                 );
 
-        long recentMessages = messageRepository
-                .countByAuthorIdAndCreatedAtAfter(
-                        currentUser.getId(),
-                        rateLimitWindowStart
-                );
+        long recentMessages =
+                messageRepository
+                        .countByAuthorIdAndCreatedAtAfter(
+                                currentUser.getId(),
+                                rateLimitWindowStart
+                        );
 
         if (recentMessages >= MESSAGE_RATE_LIMIT) {
 
@@ -81,11 +90,24 @@ public class MessageServiceImpl implements MessageService {
             throw new MessageRateLimitExceededException();
         }
 
+        EncryptedMessage encryptedMessage =
+                messageEncryptionService.encrypt(
+                        request.text(),
+                        conversationId
+                );
+
         Message message = Message.builder()
                 .conversation(conversation)
                 .author(currentUser)
-                .text(request.text())
-                .createdAt(OffsetDateTime.now())
+                .encryptedText(
+                        encryptedMessage.encryptedText()
+                )
+                .iv(
+                        encryptedMessage.iv()
+                )
+                .createdAt(
+                        OffsetDateTime.now()
+                )
                 .build();
 
         Message savedMessage =
@@ -98,7 +120,7 @@ public class MessageServiceImpl implements MessageService {
                 currentUser.getId()
         );
 
-        return messageMapper.toResponse(savedMessage);
+        return toResponse(savedMessage);
     }
 
     @Override
@@ -108,24 +130,28 @@ public class MessageServiceImpl implements MessageService {
             PageRequest pageRequest
     ) {
 
-        User currentUser = currentUserProvider.getCurrentUser();
+        User currentUser =
+                currentUserProvider.getCurrentUser();
 
         conversationService.getAccessibleConversation(
                 conversationId,
                 currentUser
         );
 
-        List<MessageResponse> content = messageRepository
-                .findByConversationId(
-                        conversationId,
-                        pageRequest
-                )
-                .stream()
-                .map(messageMapper::toResponse)
-                .toList();
+        List<MessageResponse> content =
+                messageRepository
+                        .findByConversationId(
+                                conversationId,
+                                pageRequest
+                        )
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
 
-        long totalElements = messageRepository
-                .countByConversationId(conversationId);
+        long totalElements =
+                messageRepository.countByConversationId(
+                        conversationId
+                );
 
         return buildPageResponse(
                 content,
@@ -142,33 +168,72 @@ public class MessageServiceImpl implements MessageService {
             PageRequest pageRequest
     ) {
 
-        User currentUser = currentUserProvider.getCurrentUser();
+        User currentUser =
+                currentUserProvider.getCurrentUser();
 
         conversationService.getAccessibleConversation(
                 conversationId,
                 currentUser
         );
 
-        List<MessageResponse> content = messageRepository
-                .searchByConversationIdAndText(
-                        conversationId,
-                        text,
-                        pageRequest
-                )
-                .stream()
-                .map(messageMapper::toResponse)
-                .toList();
+        String normalizedText =
+                text.toLowerCase(Locale.ROOT);
 
-        long totalElements = messageRepository
-                .countByConversationIdAndText(
-                        conversationId,
-                        text
+        List<MessageResponse> filteredMessages =
+                messageRepository
+                        .findAllByConversationId(
+                                conversationId
+                        )
+                        .stream()
+                        .map(this::toResponse)
+                        .filter(message ->
+                                message.text()
+                                        .toLowerCase(Locale.ROOT)
+                                        .contains(normalizedText)
+                        )
+                        .toList();
+
+        long totalElements =
+                filteredMessages.size();
+
+        int fromIndex = Math.min(
+                pageRequest.page()
+                        * pageRequest.size(),
+                filteredMessages.size()
+        );
+
+        int toIndex = Math.min(
+                fromIndex + pageRequest.size(),
+                filteredMessages.size()
+        );
+
+        List<MessageResponse> content =
+                filteredMessages.subList(
+                        fromIndex,
+                        toIndex
                 );
 
         return buildPageResponse(
                 content,
                 pageRequest,
                 totalElements
+        );
+    }
+
+    private MessageResponse toResponse(
+            Message message
+    ) {
+
+        String text =
+                messageEncryptionService.decrypt(
+                        message.getEncryptedText(),
+                        message.getIv(),
+                        message.getConversation().getId()
+                );
+
+        return messageMapper.toResponse(
+                message,
+                text
         );
     }
 }

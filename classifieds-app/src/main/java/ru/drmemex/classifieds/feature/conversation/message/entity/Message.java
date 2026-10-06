@@ -40,8 +40,11 @@ public class Message {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @Column(name = "text", nullable = false, length = 2000)
-    private String text;
+    @Column(name = "encrypted_text", nullable = false, columnDefinition = "TEXT")
+    private String encryptedText;
+
+    @Column(name = "iv", nullable = false, length = 24)
+    private String iv;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;

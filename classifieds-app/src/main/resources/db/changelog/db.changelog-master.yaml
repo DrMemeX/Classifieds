@@ -31,3 +31,19 @@ databaseChangeLog:
   - include:
       file: changes/008-add-super-admin-role.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: changes/009-create-outbox-events.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/010-create-outbox-pending-index.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/011-encrypt-messages.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/012-insert-demo-data.yaml
+      relativeToChangelogFile: true

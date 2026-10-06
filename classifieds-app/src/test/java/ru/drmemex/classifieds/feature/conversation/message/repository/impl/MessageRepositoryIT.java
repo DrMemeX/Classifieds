@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class MessageRepositoryIT extends AbstractIntegrationTest {
 
+    private static final String TEST_IV = "0123456789abcdef";
+
     @Autowired
     private MessageRepository messageRepository;
 
@@ -74,23 +76,19 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         Message message = buildMessage(
                 conversation,
                 buyer,
-                "Test message",
+                "encrypted-test-message",
                 createdAt
         );
 
-        Message savedMessage =
-                messageRepository.save(message);
+        Message savedMessage = messageRepository.save(message);
 
         entityManager.flush();
 
-        Long messageId =
-                savedMessage.getId();
+        Long messageId = savedMessage.getId();
 
-        Long conversationId =
-                conversation.getId();
+        Long conversationId = conversation.getId();
 
-        Long authorId =
-                buyer.getId();
+        Long authorId = buyer.getId();
 
         entityManager.clear();
 
@@ -114,8 +112,13 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         );
 
         assertEquals(
-                "Test message",
-                actualMessage.getText()
+                "encrypted-test-message",
+                actualMessage.getEncryptedText()
+        );
+
+        assertEquals(
+                TEST_IV,
+                actualMessage.getIv()
         );
 
         assertEquals(
@@ -180,7 +183,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         Message newestMessage = createMessage(
                 conversation,
                 seller,
-                "Newest message",
+                "encrypted-newest",
                 OffsetDateTime.parse(
                         "2026-09-25T13:00:00Z"
                 )
@@ -189,7 +192,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 conversation,
                 buyer,
-                "Oldest message",
+                "encrypted-oldest",
                 OffsetDateTime.parse(
                         "2026-09-25T10:00:00Z"
                 )
@@ -198,7 +201,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 conversation,
                 seller,
-                "First same time message",
+                "encrypted-first-same-time",
                 OffsetDateTime.parse(
                         "2026-09-25T11:00:00Z"
                 )
@@ -207,7 +210,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         Message secondSameTimeMessage = createMessage(
                 conversation,
                 buyer,
-                "Second same time message",
+                "encrypted-second-same-time",
                 OffsetDateTime.parse(
                         "2026-09-25T11:00:00Z"
                 )
@@ -216,7 +219,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 anotherConversation,
                 anotherBuyer,
-                "Another conversation message",
+                "encrypted-another-conversation",
                 OffsetDateTime.parse(
                         "2026-09-25T09:30:00Z"
                 )
@@ -224,14 +227,11 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
 
         entityManager.flush();
 
-        Long conversationId =
-                conversation.getId();
+        Long conversationId = conversation.getId();
 
-        Long secondSameTimeMessageId =
-                secondSameTimeMessage.getId();
+        Long secondSameTimeMessageId = secondSameTimeMessage.getId();
 
-        Long newestMessageId =
-                newestMessage.getId();
+        Long newestMessageId = newestMessage.getId();
 
         entityManager.clear();
 
@@ -260,6 +260,133 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         assertEquals(
                 newestMessageId,
                 result.get(1).getId()
+        );
+    }
+
+    @Test
+    void findAllByConversationId_ShouldReturnAllMessagesSorted() {
+
+        User seller = createUser(
+                "message-find-all-seller"
+        );
+
+        User buyer = createUser(
+                "message-find-all-buyer"
+        );
+
+        User anotherBuyer = createUser(
+                "message-find-all-another-buyer"
+        );
+
+        Category category = createCategory(
+                "Message Find All Category"
+        );
+
+        Region region = createRegion(
+                "Message Find All Region"
+        );
+
+        Advertisement advertisement = createAdvertisement(
+                "Message Find All Advertisement",
+                seller,
+                category,
+                region
+        );
+
+        Advertisement anotherAdvertisement = createAdvertisement(
+                "Message Find All Another Advertisement",
+                seller,
+                category,
+                region
+        );
+
+        Conversation conversation = createConversation(
+                advertisement,
+                buyer,
+                OffsetDateTime.parse(
+                        "2026-09-25T09:00:00Z"
+                )
+        );
+
+        Conversation anotherConversation = createConversation(
+                anotherAdvertisement,
+                anotherBuyer,
+                OffsetDateTime.parse(
+                        "2026-09-25T09:00:00Z"
+                )
+        );
+
+        Message secondMessage = createMessage(
+                conversation,
+                seller,
+                "encrypted-second",
+                OffsetDateTime.parse(
+                        "2026-09-25T11:00:00Z"
+                )
+        );
+
+        Message firstMessage = createMessage(
+                conversation,
+                buyer,
+                "encrypted-first",
+                OffsetDateTime.parse(
+                        "2026-09-25T10:00:00Z"
+                )
+        );
+
+        Message thirdMessage = createMessage(
+                conversation,
+                buyer,
+                "encrypted-third",
+                OffsetDateTime.parse(
+                        "2026-09-25T12:00:00Z"
+                )
+        );
+
+        createMessage(
+                anotherConversation,
+                anotherBuyer,
+                "encrypted-another-conversation",
+                OffsetDateTime.parse(
+                        "2026-09-25T09:30:00Z"
+                )
+        );
+
+        entityManager.flush();
+
+        Long conversationId = conversation.getId();
+
+        Long firstMessageId = firstMessage.getId();
+
+        Long secondMessageId = secondMessage.getId();
+
+        Long thirdMessageId = thirdMessage.getId();
+
+        entityManager.clear();
+
+        List<Message> result =
+                messageRepository.findAllByConversationId(
+                        conversationId
+                );
+
+        assertEquals(
+                3,
+                result.size()
+        );
+
+        assertEquals(
+                firstMessageId,
+                result.get(0).getId()
+        );
+
+        assertEquals(
+                secondMessageId,
+                result.get(1).getId()
+        );
+
+        assertEquals(
+                thirdMessageId,
+                result.get(2).getId()
         );
     }
 
@@ -319,7 +446,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 conversation,
                 buyer,
-                "First message",
+                "encrypted-first",
                 OffsetDateTime.parse(
                         "2026-09-25T10:00:00Z"
                 )
@@ -328,7 +455,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 conversation,
                 seller,
-                "Second message",
+                "encrypted-second",
                 OffsetDateTime.parse(
                         "2026-09-25T11:00:00Z"
                 )
@@ -337,7 +464,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 anotherConversation,
                 anotherBuyer,
-                "Another conversation message",
+                "encrypted-another",
                 OffsetDateTime.parse(
                         "2026-09-25T12:00:00Z"
                 )
@@ -345,253 +472,13 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
 
         entityManager.flush();
 
-        Long conversationId =
-                conversation.getId();
+        Long conversationId = conversation.getId();
 
         entityManager.clear();
 
         long result =
                 messageRepository.countByConversationId(
                         conversationId
-                );
-
-        assertEquals(
-                2L,
-                result
-        );
-    }
-
-    @Test
-    void searchByConversationIdAndText_ShouldReturnMatchingMessagesIgnoringCase() {
-
-        User seller = createUser(
-                "message-search-seller"
-        );
-
-        User buyer = createUser(
-                "message-search-buyer"
-        );
-
-        User anotherBuyer = createUser(
-                "message-search-another-buyer"
-        );
-
-        Category category = createCategory(
-                "Message Search Category"
-        );
-
-        Region region = createRegion(
-                "Message Search Region"
-        );
-
-        Advertisement advertisement = createAdvertisement(
-                "Message Search Advertisement",
-                seller,
-                category,
-                region
-        );
-
-        Advertisement anotherAdvertisement = createAdvertisement(
-                "Message Search Another Advertisement",
-                seller,
-                category,
-                region
-        );
-
-        Conversation conversation = createConversation(
-                advertisement,
-                buyer,
-                OffsetDateTime.parse(
-                        "2026-09-25T09:00:00Z"
-                )
-        );
-
-        Conversation anotherConversation = createConversation(
-                anotherAdvertisement,
-                anotherBuyer,
-                OffsetDateTime.parse(
-                        "2026-09-25T09:00:00Z"
-                )
-        );
-
-        Message firstMatchingMessage = createMessage(
-                conversation,
-                buyer,
-                "Hello, how are you?",
-                OffsetDateTime.parse(
-                        "2026-09-25T10:00:00Z"
-                )
-        );
-
-        createMessage(
-                conversation,
-                seller,
-                "Goodbye",
-                OffsetDateTime.parse(
-                        "2026-09-25T11:00:00Z"
-                )
-        );
-
-        Message secondMatchingMessage = createMessage(
-                conversation,
-                seller,
-                "Say HELLO again",
-                OffsetDateTime.parse(
-                        "2026-09-25T12:00:00Z"
-                )
-        );
-
-        createMessage(
-                anotherConversation,
-                anotherBuyer,
-                "Hello from another conversation",
-                OffsetDateTime.parse(
-                        "2026-09-25T09:30:00Z"
-                )
-        );
-
-        entityManager.flush();
-
-        Long conversationId =
-                conversation.getId();
-
-        Long firstMatchingMessageId =
-                firstMatchingMessage.getId();
-
-        Long secondMatchingMessageId =
-                secondMatchingMessage.getId();
-
-        entityManager.clear();
-
-        PageRequest pageRequest =
-                new PageRequest(
-                        0,
-                        10
-                );
-
-        List<Message> result =
-                messageRepository.searchByConversationIdAndText(
-                        conversationId,
-                        "hello",
-                        pageRequest
-                );
-
-        assertEquals(
-                2,
-                result.size()
-        );
-
-        assertEquals(
-                firstMatchingMessageId,
-                result.get(0).getId()
-        );
-
-        assertEquals(
-                secondMatchingMessageId,
-                result.get(1).getId()
-        );
-    }
-
-    @Test
-    void countByConversationIdAndText_ShouldCountMatchingMessagesIgnoringCase() {
-
-        User seller = createUser(
-                "message-search-count-seller"
-        );
-
-        User buyer = createUser(
-                "message-search-count-buyer"
-        );
-
-        User anotherBuyer = createUser(
-                "message-search-count-another-buyer"
-        );
-
-        Category category = createCategory(
-                "Message Search Count Category"
-        );
-
-        Region region = createRegion(
-                "Message Search Count Region"
-        );
-
-        Advertisement advertisement = createAdvertisement(
-                "Message Search Count Advertisement",
-                seller,
-                category,
-                region
-        );
-
-        Advertisement anotherAdvertisement = createAdvertisement(
-                "Message Search Count Another Advertisement",
-                seller,
-                category,
-                region
-        );
-
-        Conversation conversation = createConversation(
-                advertisement,
-                buyer,
-                OffsetDateTime.parse(
-                        "2026-09-25T09:00:00Z"
-                )
-        );
-
-        Conversation anotherConversation = createConversation(
-                anotherAdvertisement,
-                anotherBuyer,
-                OffsetDateTime.parse(
-                        "2026-09-25T09:00:00Z"
-                )
-        );
-
-        createMessage(
-                conversation,
-                buyer,
-                "Hello world",
-                OffsetDateTime.parse(
-                        "2026-09-25T10:00:00Z"
-                )
-        );
-
-        createMessage(
-                conversation,
-                seller,
-                "Another HELLO message",
-                OffsetDateTime.parse(
-                        "2026-09-25T11:00:00Z"
-                )
-        );
-
-        createMessage(
-                conversation,
-                seller,
-                "No match here",
-                OffsetDateTime.parse(
-                        "2026-09-25T12:00:00Z"
-                )
-        );
-
-        createMessage(
-                anotherConversation,
-                anotherBuyer,
-                "Hello from another conversation",
-                OffsetDateTime.parse(
-                        "2026-09-25T13:00:00Z"
-                )
-        );
-
-        entityManager.flush();
-
-        Long conversationId =
-                conversation.getId();
-
-        entityManager.clear();
-
-        long result =
-                messageRepository.countByConversationIdAndText(
-                        conversationId,
-                        "hello"
                 );
 
         assertEquals(
@@ -642,7 +529,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 conversation,
                 buyer,
-                "Older message",
+                "encrypted-older",
                 OffsetDateTime.parse(
                         "2026-09-25T10:00:00Z"
                 )
@@ -651,14 +538,14 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 conversation,
                 buyer,
-                "Boundary message",
+                "encrypted-boundary",
                 createdAfter
         );
 
         createMessage(
                 conversation,
                 buyer,
-                "Newer message",
+                "encrypted-newer",
                 OffsetDateTime.parse(
                         "2026-09-25T12:00:00Z"
                 )
@@ -667,7 +554,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
         createMessage(
                 conversation,
                 seller,
-                "Another author message",
+                "encrypted-another-author",
                 OffsetDateTime.parse(
                         "2026-09-25T13:00:00Z"
                 )
@@ -675,8 +562,7 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
 
         entityManager.flush();
 
-        Long authorId =
-                buyer.getId();
+        Long authorId = buyer.getId();
 
         entityManager.clear();
 
@@ -782,14 +668,14 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
     private Message createMessage(
             Conversation conversation,
             User author,
-            String text,
+            String encryptedText,
             OffsetDateTime createdAt
     ) {
 
         Message message = buildMessage(
                 conversation,
                 author,
-                text,
+                encryptedText,
                 createdAt
         );
 
@@ -801,14 +687,15 @@ class MessageRepositoryIT extends AbstractIntegrationTest {
     private Message buildMessage(
             Conversation conversation,
             User author,
-            String text,
+            String encryptedText,
             OffsetDateTime createdAt
     ) {
 
         return Message.builder()
                 .conversation(conversation)
                 .author(author)
-                .text(text)
+                .encryptedText(encryptedText)
+                .iv(TEST_IV)
                 .createdAt(createdAt)
                 .build();
     }

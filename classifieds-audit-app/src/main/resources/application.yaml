@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: classifieds-audit-app
+
+  datasource:
+    url: jdbc:postgresql://localhost:6767/classifieds_audit
+    username: ${AUDIT_POSTGRES_USER}
+    password: ${AUDIT_POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+    listener:
+      ack-mode: record

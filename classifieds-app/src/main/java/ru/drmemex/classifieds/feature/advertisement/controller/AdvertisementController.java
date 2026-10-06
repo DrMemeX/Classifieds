@@ -104,6 +104,7 @@ public class AdvertisementController {
 
     @GetMapping("/search")
     public PageResponse<AdvertisementResponse> search(
+            @Valid
             AdvertisementFilter filter,
             @RequestParam(defaultValue = "0")
             @Min(0)

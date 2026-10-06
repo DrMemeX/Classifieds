@@ -15,19 +15,12 @@ public interface MessageRepository {
             PageRequest pageRequest
     );
 
-    long countByConversationId(
+    List<Message> findAllByConversationId(
             Long conversationId
     );
 
-    List<Message> searchByConversationIdAndText(
-            Long conversationId,
-            String text,
-            PageRequest pageRequest
-    );
-
-    long countByConversationIdAndText(
-            Long conversationId,
-            String text
+    long countByConversationId(
+            Long conversationId
     );
 
     long countByAuthorIdAndCreatedAtAfter(

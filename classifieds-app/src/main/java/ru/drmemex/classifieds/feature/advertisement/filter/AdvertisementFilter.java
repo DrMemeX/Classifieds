@@ -1,5 +1,8 @@
 package ru.drmemex.classifieds.feature.advertisement.filter;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementSortField;
 import ru.drmemex.classifieds.feature.advertisement.model.AdvertisementStatus;
 import ru.drmemex.classifieds.feature.advertisement.model.SortDirection;
@@ -9,8 +12,12 @@ import java.util.List;
 
 public record AdvertisementFilter(
         AdvertisementStatus status,
-        List<Long> categoryIds,
-        List<Long> regionIds,
+        @Size(min = 1)
+        List<@NotNull @Positive Long> categoryIds,
+
+        @Size(min = 1)
+        List<@NotNull @Positive Long> regionIds,
+
         String locality,
         String title,
         BigDecimal minPrice,
